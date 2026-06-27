@@ -1,0 +1,333 @@
+<!DOCTYPE html><html lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Detail Absensi - Fingerspot Attendance System</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        .glass-panel {
+            backdrop-filter: blur(12px);
+            background-color: rgba(251, 249, 250, 0.55);
+            border: 1px solid rgba(29, 43, 62, 0.08);
+            box-shadow: 0px 10px 30px rgba(51, 65, 85, 0.05);
+        }
+        .glass-modal {
+            backdrop-filter: blur(20px);
+            background-color: rgba(251, 249, 250, 0.85);
+            border: 1px solid rgba(29, 43, 62, 0.12);
+            box-shadow: 0px 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        .dark-mono-panel {
+            background-color: #1e1e1e;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-fade { animation: fadeIn 0.3s ease-out; }
+        .animate-slide { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-error": "#ffffff",
+                        "secondary-fixed-dim": "#b7c8e1",
+                        "primary": "#1d2b3e",
+                        "secondary": "#505f76",
+                        "tertiary-fixed-dim": "#dfc299",
+                        "tertiary": "#38270a",
+                        "surface-dim": "#dbd9db",
+                        "on-surface": "#1b1b1d",
+                        "on-primary-fixed": "#0d1c2f",
+                        "on-tertiary-fixed-variant": "#574424",
+                        "on-secondary-container": "#54647a",
+                        "surface-variant": "#e4e2e4",
+                        "on-secondary-fixed": "#0b1c30",
+                        "inverse-on-surface": "#f2f0f2",
+                        "primary-container": "#334155",
+                        "tertiary-fixed": "#fcdeb3",
+                        "outline-variant": "#c5c6cd",
+                        "surface-container-highest": "#e4e2e4",
+                        "on-background": "#1b1b1d",
+                        "on-secondary-fixed-variant": "#38485d",
+                        "error-container": "#ffdad6",
+                        "surface-container-low": "#f5f3f5",
+                        "surface-container": "#efedef",
+                        "on-tertiary-fixed": "#281901",
+                        "primary-fixed-dim": "#b9c7e0",
+                        "surface-bright": "#fbf9fa",
+                        "on-secondary": "#ffffff",
+                        "primary-fixed": "#d5e3fd",
+                        "surface-tint": "#515f74",
+                        "error": "#ba1a1a",
+                        "on-primary-container": "#9eadc5",
+                        "surface": "#fbf9fa",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed-variant": "#3a485c",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-container": "#503d1e",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-fixed": "#d3e4fe",
+                        "outline": "#75777d",
+                        "inverse-primary": "#b9c7e0",
+                        "secondary-container": "#d0e1fb",
+                        "background": "#fbf9fa",
+                        "on-primary": "#ffffff",
+                        "inverse-surface": "#303032",
+                        "on-tertiary-container": "#c3a881",
+                        "on-surface-variant": "#44474c",
+                        "surface-container-high": "#eae7e9"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "3xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "md": "16px",
+                        "xl": "40px",
+                        "lg": "24px",
+                        "gutter": "20px",
+                        "container-margin": "32px",
+                        "base": "4px",
+                        "xs": "4px",
+                        "sm": "8px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "title-md": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "label-md": ["Inter"],
+                        "body-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "title-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface font-body-lg min-h-screen overflow-hidden">
+<!-- Background Mockup (The Page Behind) -->
+<div class="fixed inset-0 flex">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full w-[68px] hover:w-64 transition-all duration-300 z-50 overflow-hidden backdrop-blur-xl border-r border-on-surface/[0.08] flex flex-col py-lg group bg-surface/30">
+<div class="px-md mb-xl flex items-center gap-md">
+<div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-white" style="font-variation-settings: 'FILL' 1;">fingerprint</span>
+</div>
+<span class="font-headline-lg-mobile font-bold text-primary opacity-0 group-hover:opacity-100 transition-opacity">Fingerspot</span>
+</div>
+<nav class="flex-1 space-y-sm px-sm"><div class="flex items-center gap-md p-md rounded-xl text-secondary hover:bg-surface-variant/50 cursor-pointer">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="group-hover:opacity-100 opacity-0 transition-opacity whitespace-nowrap">Dashboard</span>
+</div>
+<div class="flex items-center gap-md p-md rounded-xl text-primary font-bold border-r-4 border-primary bg-primary-container/10">
+<span class="material-symbols-outlined">calendar_today</span>
+<span class="group-hover:opacity-100 opacity-0 transition-opacity whitespace-nowrap">Data Absensi</span>
+</div>
+<div class="flex items-center gap-md p-md rounded-xl text-secondary hover:bg-surface-variant/50 cursor-pointer">
+<span class="material-symbols-outlined">devices</span>
+<span class="group-hover:opacity-100 opacity-0 transition-opacity whitespace-nowrap">Mesin</span>
+</div>
+<div class="flex items-center gap-md p-md rounded-xl text-secondary hover:bg-surface-variant/50 cursor-pointer">
+<span class="material-symbols-outlined">group</span>
+<span class="group-hover:opacity-100 opacity-0 transition-opacity whitespace-nowrap">Data User</span>
+</div>
+<div class="flex items-center gap-md p-md rounded-xl text-secondary hover:bg-surface-variant/50 cursor-pointer">
+<span class="material-symbols-outlined">settings</span>
+<span class="group-hover:opacity-100 opacity-0 transition-opacity whitespace-nowrap">Settings</span>
+</div></nav>
+</aside>
+<!-- Main Content (Blurred) -->
+<main class="ml-[68px] flex-1 p-lg filter blur-sm">
+<header class="flex justify-between items-center mb-xl">
+<div>
+<h1 class="font-headline-lg text-primary">Data Absensi</h1>
+<p class="text-secondary">Monitoring real-time log kehadiran karyawan.</p>
+</div>
+<div class="flex gap-md">
+<button class="px-lg py-md bg-primary text-white rounded-xl font-bold">Export Data</button>
+</div>
+</header>
+<!-- Table Placeholder -->
+<div class="glass-panel rounded-3xl p-lg space-y-md">
+<div class="h-12 bg-surface-container rounded-xl w-full"></div>
+<div class="h-64 bg-surface-container-low rounded-xl w-full flex items-center justify-center">
+<span class="text-outline">Loading records...</span>
+</div>
+</div>
+</main>
+</div>
+<!-- Modal Overlay -->
+<div class="fixed inset-0 z-[100] flex items-center justify-center p-md bg-primary/40 backdrop-blur-md animate-fade" id="modalOverlay">
+<!-- Modal Container -->
+<div class="glass-modal w-full max-w-2xl rounded-3xl overflow-hidden flex flex-col animate-slide max-h-[90vh]">
+<!-- Modal Header -->
+<header class="flex items-center justify-between px-lg py-md border-b border-on-surface/[0.08]">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">description</span>
+<h2 class="font-title-md text-primary">Detail Absensi</h2>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-on-surface/[0.05] text-secondary transition-colors" onclick="closeModal()">
+<span class="material-symbols-outlined">close</span>
+</button>
+</header>
+<!-- Modal Body -->
+<div class="flex-1 overflow-y-auto p-lg space-y-lg custom-scrollbar">
+<!-- Information Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-lg">
+<div class="space-y-xs">
+<label class="font-label-md text-secondary uppercase tracking-widest">PIN Karyawan</label>
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-outline" style="font-size: 20px;">id_card</span>
+<span class="font-headline-lg-mobile text-primary font-bold">882910</span>
+</div>
+</div>
+<div class="space-y-xs">
+<label class="font-label-md text-secondary uppercase tracking-widest">Nama Lengkap</label>
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-outline" style="font-size: 20px;">person</span>
+<span class="font-headline-lg-mobile text-primary font-bold">Ahmad Syahrul</span>
+</div>
+</div>
+<div class="space-y-xs">
+<label class="font-label-md text-secondary uppercase tracking-widest">Waktu Scan</label>
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-outline" style="font-size: 20px;">schedule</span>
+<span class="font-body-lg text-on-surface">24 May 2024, 08:02:45 AM</span>
+</div>
+</div>
+<div class="space-y-xs">
+<label class="font-label-md text-secondary uppercase tracking-widest">Status Verifikasi</label>
+<div class="flex gap-sm">
+<div class="px-md py-1 rounded-full bg-primary/10 text-primary flex items-center gap-sm border border-primary/20">
+<span class="material-symbols-outlined" style="font-size: 16px;">verified_user</span>
+<span class="font-label-md">Fingerprint</span>
+</div>
+<div class="px-md py-1 rounded-full bg-success/10 text-green-700 flex items-center gap-sm border border-green-200">
+<span class="w-2 h-2 rounded-full bg-green-500"></span>
+<span class="font-label-md">Present</span>
+</div>
+</div>
+</div>
+</div>
+<hr class="border-on-surface/[0.08]">
+<!-- Raw Payload Section -->
+<div class="space-y-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-secondary">terminal</span>
+<h3 class="font-title-md text-primary">Raw Payload</h3>
+</div>
+<button class="flex items-center gap-sm text-primary hover:bg-primary/5 px-md py-sm rounded-lg transition-all active:scale-95" onclick="copyPayload()">
+<span class="material-symbols-outlined" style="font-size: 18px;">content_copy</span>
+<span class="font-label-md">Copy JSON</span>
+</button>
+</div>
+<div class="dark-mono-panel p-lg rounded-2xl overflow-x-auto text-body-sm relative group">
+<div class="absolute top-4 right-4 text-[10px] text-white/30 uppercase tracking-widest pointer-events-none">application/json</div>
+<pre class="text-blue-300 leading-relaxed"><code id="payloadContent">{
+  <span class="text-purple-400">"log_id"</span>: <span class="text-yellow-200">"ATT-7729-XJ"</span>,
+  <span class="text-purple-400">"device_sn"</span>: <span class="text-yellow-200">"FP-NEO-1002"</span>,
+  <span class="text-purple-400">"pin"</span>: <span class="text-yellow-200">"882910"</span>,
+  <span class="text-purple-400">"scan_date"</span>: <span class="text-yellow-200">"2024-05-24 08:02:45"</span>,
+  <span class="text-purple-400">"verify_mode"</span>: <span class="text-yellow-200">1</span>,
+  <span class="text-purple-400">"work_code"</span>: <span class="text-yellow-200">"0"</span>,
+  <span class="text-purple-400">"sync_meta"</span>: {
+    <span class="text-purple-400">"cloud_status"</span>: <span class="text-yellow-200">"success"</span>,
+    <span class="text-purple-400">"latency_ms"</span>: <span class="text-yellow-200">42</span>
+  }
+}</code></pre>
+</div>
+</div>
+</div>
+<!-- Modal Footer -->
+<footer class="px-lg py-md bg-on-surface/[0.02] border-t border-on-surface/[0.08] flex items-center justify-end gap-md">
+<button class="px-lg py-md text-secondary font-bold hover:bg-on-surface/[0.05] rounded-xl transition-all" onclick="closeModal()">Cancel</button>
+<button class="px-xl py-md bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20 hover:shadow-xl hover:translate-y-[-2px] active:translate-y-0 transition-all">
+                    Verify Log
+                </button>
+</footer>
+</div>
+</div>
+<!-- Micro-interactions Script -->
+<script>
+        function closeModal() {
+            const overlay = document.getElementById('modalOverlay');
+            overlay.classList.add('opacity-0');
+            overlay.children[0].classList.add('translate-y-4', 'opacity-0');
+            setTimeout(() => {
+                // In a real app, this would hide the modal or navigate back
+                overlay.style.display = 'none';
+                document.body.classList.remove('overflow-hidden');
+            }, 300);
+        }
+
+        async function copyPayload() {
+            const text = document.getElementById('payloadContent').innerText;
+            try {
+                await navigator.clipboard.writeText(text);
+                const btn = event.currentTarget;
+                const originalText = btn.innerHTML;
+                btn.innerHTML = `<span class="material-symbols-outlined text-green-500" style="font-size: 18px;">check</span><span class="font-label-md text-green-500">Copied!</span>`;
+                btn.classList.add('bg-green-50');
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.classList.remove('bg-green-50');
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy: ', err);
+            }
+        }
+
+        // Close on ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
+    </script>
+
+
+</body></html>

@@ -2,102 +2,123 @@ import Sidebar from "../components/Sidebar";
 import Topbar from "../components/Topbar";
 
 const pinData = [
-  { id: 1, pin: "00124", name: "Jonathan Doe", device: "Finger-01", registered: "01 Jan 2023", status: "Active" },
-  { id: 2, pin: "00089", name: "Maria Garcia", device: "Finger-01", registered: "15 Feb 2023", status: "Active" },
-  { id: 3, pin: "00045", name: "Ahmad Fauzi", device: "Finger-02", registered: "20 Mar 2023", status: "Active" },
-  { id: 4, pin: "00201", name: "Siti Rahmawati", device: "Card-01", registered: "05 Apr 2023", status: "Active" },
-  { id: 5, pin: "00067", name: "Budi Santoso", device: "Finger-01", registered: "10 May 2023", status: "Expired" },
-  { id: 6, pin: "00156", name: "Dewi Lestari", device: "Finger-02", registered: "25 Jun 2023", status: "Active" },
+  { no: "01", pin: "882190", status: "AKTIF" as const, date: "24 Okt 2023, 14:20" },
+  { no: "02", pin: "459012", status: "AKTIF" as const, date: "22 Okt 2023, 09:12" },
+  { no: "03", pin: "102934", status: "NON-AKTIF" as const, date: "19 Okt 2023, 17:55" },
+  { no: "04", pin: "773410", status: "AKTIF" as const, date: "18 Okt 2023, 11:30" },
+  { no: "05", pin: "900122", status: "DITANGGUHKAN" as const, date: "15 Okt 2023, 08:45" },
 ];
 
-const statusStyles: Record<string, string> = {
-  Active: "bg-green-500/10 text-green-700 border border-green-500/20",
-  Expired: "bg-amber-500/10 text-amber-700 border border-amber-500/20",
+const statusStyles: Record<string, { badge: string; dot: string }> = {
+  AKTIF: {
+    badge: "bg-green-50 text-green-700 ring-1 ring-green-100",
+    dot: "bg-green-500",
+  },
+  "NON-AKTIF": {
+    badge: "bg-secondary-container/30 text-secondary",
+    dot: "bg-secondary",
+  },
+  DITANGGUHKAN: {
+    badge: "bg-error-container/20 text-error ring-1 ring-error-container/40",
+    dot: "bg-error",
+  },
 };
 
 export default function PinPage() {
   return (
-    <div className="min-h-screen" style={{ backgroundColor: "transparent" }}>
+    <div className="min-h-screen">
       <Sidebar />
-      <main className="ml-[68px] min-h-screen relative flex flex-col">
+      <main className="ml-[68px] min-h-screen flex flex-col">
         <Topbar title="Data PIN" />
-        <div className="p-6 lg:p-10 flex-1 flex flex-col gap-6">
-          <div className="flex items-center justify-between">
+
+        <div className="p-6 lg:p-10 max-w-7xl mx-auto w-full flex-1">
+          {/* Hero Header */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-6">
             <div>
-              <h2 className="text-[32px] font-semibold text-primary leading-10 tracking-tight">Data PIN</h2>
-              <p className="text-secondary text-[14px] leading-5 mt-1">Manage fingerprint and card PIN registrations.</p>
+              <h3 className="text-[32px] leading-[40px] tracking-[-0.01em] font-semibold text-primary mb-1">
+                Data Personal Identification Number
+              </h3>
+              <p className="text-secondary text-[14px] leading-5">
+                Kelola dan amankan akses PIN pengguna dalam satu panel terpusat.
+              </p>
             </div>
-            <button className="bg-primary text-white font-bold py-2.5 px-6 rounded-xl transition-all hover:bg-primary-container active:scale-95 flex items-center gap-2 shadow-lg shadow-primary/10">
-              <span className="material-symbols-outlined text-lg">add_card</span>
-              Tambah PIN
-            </button>
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="relative flex-1 md:w-72">
+                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-secondary pointer-events-none">search</span>
+                <input
+                  className="w-full pl-11 pr-4 py-2 bg-surface-container rounded-xl border-none ring-1 ring-on-surface/[0.08] focus:ring-primary/30 focus:bg-surface-bright transition-all text-[14px] leading-5"
+                  placeholder="Cari PIN atau Pengguna..."
+                  type="text"
+                />
+              </div>
+              <button className="flex items-center gap-2 px-6 py-2 bg-primary text-white rounded-xl hover:bg-primary-container active:scale-95 transition-all shadow-md shadow-primary/10">
+                <span className="material-symbols-outlined text-lg">sync</span>
+                <span className="text-[12px] leading-4 font-semibold whitespace-nowrap tracking-[0.05em]">
+                  Ambil Semua PIN
+                </span>
+              </button>
+            </div>
           </div>
 
-          <section className="p-6 rounded-2xl" style={{ backgroundColor: "rgba(255, 255, 255, 0.4)", backdropFilter: "blur(12px) saturate(150%)", WebkitBackdropFilter: "blur(12px) saturate(150%)", border: "1px solid rgba(255, 255, 255, 0.6)", boxShadow: "0px 8px 32px rgba(0, 0, 0, 0.04)" }}>
-            <div className="flex gap-4 items-end">
-              <div className="flex-1 flex flex-col gap-2">
-                <label className="text-[12px] font-semibold text-secondary uppercase tracking-wider ml-1">Search</label>
-                <div className="relative">
-                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-lg">search</span>
-                  <input className="w-full bg-surface-container/50 border border-on-surface/[0.08] rounded-xl pl-10 pr-4 py-2.5 text-[14px] focus:ring-2 focus:ring-primary/10 focus:border-primary/30 outline-none transition-all" placeholder="Search by PIN or name..." type="text" />
-                </div>
-              </div>
-              <div className="w-48 flex flex-col gap-2">
-                <label className="text-[12px] font-semibold text-secondary uppercase tracking-wider ml-1">Device</label>
-                <select className="w-full bg-surface-container/50 border border-on-surface/[0.08] rounded-xl px-4 py-2.5 text-[14px] focus:ring-2 focus:ring-primary/10 focus:border-primary/30 outline-none transition-all">
-                  <option>All Devices</option>
-                  <option>Finger-01</option>
-                  <option>Finger-02</option>
-                  <option>Card-01</option>
-                </select>
-              </div>
-            </div>
-          </section>
-
-          <section className="flex-1 rounded-2xl overflow-hidden flex flex-col" style={{ backgroundColor: "rgba(255, 255, 255, 0.4)", backdropFilter: "blur(12px) saturate(150%)", WebkitBackdropFilter: "blur(12px) saturate(150%)", border: "1px solid rgba(255, 255, 255, 0.6)", boxShadow: "0px 8px 32px rgba(0, 0, 0, 0.04)" }}>
+          {/* Data Table */}
+          <div className="glass-card rounded-2xl overflow-hidden mb-6">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-surface-container/30" style={{ borderBottom: "1px solid rgba(27, 27, 29, 0.08)" }}>
-                    <th className="py-4 px-6 text-[12px] font-semibold text-secondary uppercase tracking-widest">PIN</th>
-                    <th className="py-4 px-6 text-[12px] font-semibold text-secondary uppercase tracking-widest">Nama</th>
-                    <th className="py-4 px-6 text-[12px] font-semibold text-secondary uppercase tracking-widest">Device</th>
-                    <th className="py-4 px-6 text-[12px] font-semibold text-secondary uppercase tracking-widest">Registered</th>
-                    <th className="py-4 px-6 text-[12px] font-semibold text-secondary uppercase tracking-widest">Status</th>
-                    <th className="py-4 px-6 text-[12px] font-semibold text-secondary uppercase tracking-widest">Aksi</th>
+                  <tr className="bg-surface-variant/30 border-b border-on-surface/[0.05]">
+                    <th className="px-6 py-4 text-[12px] leading-4 font-semibold text-secondary uppercase tracking-wider w-20 text-center">
+                      No
+                    </th>
+                    <th className="px-6 py-4 text-[12px] leading-4 font-semibold text-secondary uppercase tracking-wider">
+                      PIN User
+                    </th>
+                    <th className="px-6 py-4 text-[12px] leading-4 font-semibold text-secondary uppercase tracking-wider">
+                      Status &amp; Integritas
+                    </th>
+                    <th className="px-6 py-4 text-[12px] leading-4 font-semibold text-secondary uppercase tracking-wider">
+                      Terakhir Diperbarui
+                    </th>
+                    <th className="px-6 py-4 text-[12px] leading-4 font-semibold text-secondary uppercase tracking-wider text-right">
+                      Aksi
+                    </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-on-surface/[0.04]">
+                <tbody className="divide-y divide-on-surface/[0.03]">
                   {pinData.map((row) => (
-                    <tr key={row.id} className="hover:bg-surface-variant/20 transition-colors">
-                      <td className="py-4 px-6 font-mono text-[14px] text-primary">{row.pin}</td>
-                      <td className="py-4 px-6">
+                    <tr key={row.no} className="hover:bg-surface-bright/50 transition-colors group">
+                      <td className="px-6 py-4 text-center text-[14px] leading-5 text-secondary">
+                        {row.no}
+                      </td>
+                      <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-secondary text-xs font-bold">
-                            {row.name.split(" ").map((n) => n[0]).join("")}
+                          <div className="w-8 h-8 rounded-lg bg-primary-fixed-dim/20 flex items-center justify-center">
+                            <span className="material-symbols-outlined text-primary text-[18px]">key</span>
                           </div>
-                          <span className="text-[14px] font-bold text-primary">{row.name}</span>
+                          <span className="text-[16px] leading-6 font-bold text-primary tracking-[0.2em] font-mono">
+                            {row.pin}
+                          </span>
                         </div>
                       </td>
-                      <td className="py-4 px-6">
-                        <div className="flex items-center gap-2 text-[14px] text-secondary">
-                          <span className="material-symbols-outlined text-sm">{row.device.includes("Finger") ? "fingerprint" : "credit_card"}</span>
-                          {row.device}
-                        </div>
-                      </td>
-                      <td className="py-4 px-6 text-[14px] text-secondary">{row.registered}</td>
-                      <td className="py-4 px-6">
-                        <span className={`px-3 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase ${statusStyles[row.status]}`}>
+                      <td className="px-6 py-4">
+                        <span
+                          className={`inline-flex items-center px-2 py-1 rounded-full text-[11px] font-bold ${statusStyles[row.status].badge}`}
+                        >
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full mr-2 ${statusStyles[row.status].dot}`}
+                          />
                           {row.status}
                         </span>
                       </td>
-                      <td className="py-4 px-6">
-                        <div className="flex items-center gap-2">
-                          <button className="text-outline hover:text-primary transition-colors">
-                            <span className="material-symbols-outlined">edit</span>
+                      <td className="px-6 py-4 text-[14px] leading-5 text-secondary">
+                        {row.date}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button className="w-8 h-8 rounded-lg border border-outline-variant flex items-center justify-center text-secondary hover:bg-primary hover:text-white transition-all active:scale-90">
+                            <span className="material-symbols-outlined text-[18px]">edit</span>
                           </button>
-                          <button className="text-outline hover:text-red-600 transition-colors">
-                            <span className="material-symbols-outlined">delete</span>
+                          <button className="w-8 h-8 rounded-lg border border-outline-variant flex items-center justify-center text-secondary hover:bg-error hover:text-white transition-all active:scale-90">
+                            <span className="material-symbols-outlined text-[18px]">delete</span>
                           </button>
                         </div>
                       </td>
@@ -106,8 +127,108 @@ export default function PinPage() {
                 </tbody>
               </table>
             </div>
-          </section>
+
+            {/* Pagination */}
+            <div className="px-6 py-4 flex items-center justify-between bg-surface-variant/10 border-t border-on-surface/[0.05]">
+              <p className="text-secondary text-[12px] leading-4 font-semibold tracking-[0.05em]">
+                Menampilkan 5 dari 1,248 data PIN
+              </p>
+              <div className="flex items-center gap-2">
+                <button className="p-1 rounded-lg border border-outline-variant text-secondary hover:bg-surface-variant transition-colors disabled:opacity-50" disabled>
+                  <span className="material-symbols-outlined">chevron_left</span>
+                </button>
+                <div className="flex items-center">
+                  <span className="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-white text-[12px] leading-4 font-semibold">
+                    1
+                  </span>
+                  <span className="w-8 h-8 flex items-center justify-center rounded-lg text-secondary text-[12px] leading-4 font-semibold hover:bg-surface-variant cursor-pointer">
+                    2
+                  </span>
+                  <span className="w-8 h-8 flex items-center justify-center rounded-lg text-secondary text-[12px] leading-4 font-semibold hover:bg-surface-variant cursor-pointer">
+                    3
+                  </span>
+                </div>
+                <button className="p-1 rounded-lg border border-outline-variant text-secondary hover:bg-surface-variant transition-colors">
+                  <span className="material-symbols-outlined">chevron_right</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Bento Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Tingkat Keamanan */}
+            <div className="glass-card p-6 rounded-2xl flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-secondary-container flex items-center justify-center text-primary">
+                <span className="material-symbols-outlined text-[28px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  security
+                </span>
+              </div>
+              <div>
+                <p className="text-secondary text-[12px] leading-4 font-semibold uppercase tracking-[0.05em]">
+                  Tingkat Keamanan
+                </p>
+                <h4 className="text-[24px] leading-tight font-bold text-primary">
+                  94.2% <span className="text-green-500 text-[14px] leading-5 font-normal">↑ 2%</span>
+                </h4>
+              </div>
+            </div>
+
+            {/* Perubahan PIN */}
+            <div className="glass-card p-6 rounded-2xl flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-primary-fixed-dim/20 flex items-center justify-center text-primary">
+                <span className="material-symbols-outlined text-[28px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  history
+                </span>
+              </div>
+              <div>
+                <p className="text-secondary text-[12px] leading-4 font-semibold uppercase tracking-[0.05em]">
+                  Perubahan PIN
+                </p>
+                <h4 className="text-[24px] leading-tight font-bold text-primary">
+                  12 <span className="text-secondary text-[14px] leading-5 font-normal">Hari ini</span>
+                </h4>
+              </div>
+            </div>
+
+            {/* Storage Health */}
+            <div className="glass-card p-6 rounded-2xl flex flex-col justify-between">
+              <div className="flex justify-between items-start">
+                <p className="text-secondary text-[12px] leading-4 font-semibold uppercase tracking-[0.05em]">
+                  Storage Health
+                </p>
+                <span className="material-symbols-outlined text-secondary text-sm">info</span>
+              </div>
+              <div className="mt-4">
+                <div className="w-full bg-surface-container rounded-full h-2 overflow-hidden">
+                  <div className="bg-primary h-full rounded-full" style={{ width: "65%" }} />
+                </div>
+                <div className="flex justify-between mt-2">
+                  <span className="text-[10px] text-secondary">6.5 GB Used</span>
+                  <span className="text-[10px] text-secondary">10 GB Max</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
+
+        {/* Footer */}
+        <footer className="p-6 mt-auto flex flex-col md:flex-row items-center justify-between border-t border-on-surface/[0.05] bg-surface-dim/30">
+          <p className="text-secondary text-[14px] leading-5">
+            &copy; 2023 Fingerspot Cloud Service. Seluruh hak cipta dilindungi.
+          </p>
+          <div className="flex gap-6 mt-4 md:mt-0">
+            <span className="text-secondary hover:text-primary cursor-pointer transition-colors text-[12px] leading-4 font-semibold tracking-[0.05em]">
+              Privacy Policy
+            </span>
+            <span className="text-secondary hover:text-primary cursor-pointer transition-colors text-[12px] leading-4 font-semibold tracking-[0.05em]">
+              Terms of Service
+            </span>
+            <span className="text-secondary hover:text-primary cursor-pointer transition-colors text-[12px] leading-4 font-semibold tracking-[0.05em]">
+              Support
+            </span>
+          </div>
+        </footer>
       </main>
     </div>
   );

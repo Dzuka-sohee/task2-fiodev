@@ -6,35 +6,20 @@ interface TopbarProps {
 
 export default function Topbar({ title }: TopbarProps) {
   return (
-    <header
-      className="sticky top-0 w-full z-40 flex justify-between items-center h-16 px-6 lg:px-10"
-      style={{
-        backgroundColor: "rgba(234, 232, 231, 0.4)",
-        backdropFilter: "blur(16px) saturate(180%)",
-        WebkitBackdropFilter: "blur(16px) saturate(180%)",
-        borderBottom: "none",
-        boxShadow: "0 4px 24px rgba(0, 0, 0, 0.04)",
-      }}
-    >
-      <h1 className="text-[20px] font-black text-primary">{title}</h1>
+    <header className="sticky top-0 w-full z-40 bg-surface/85 backdrop-blur-xl border-b border-on-surface/[0.08] shadow-[0px_10px_30px_rgba(51,65,85,0.05)] flex justify-between items-center h-16 px-6 lg:px-10">
+      <h2 className="text-[20px] leading-[28px] font-semibold text-primary">{title}</h2>
       <div className="flex items-center gap-4">
-        <button className="w-10 h-10 flex items-center justify-center rounded-full text-secondary hover:bg-white/40 transition-colors">
-          <span className="material-symbols-outlined">notifications</span>
+        <button className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant/50 transition-colors">
+          <span className="material-symbols-outlined text-secondary">notifications</span>
         </button>
-        <div className="h-8 w-[1px]" style={{ backgroundColor: "rgba(0, 0, 0, 0.08)" }} />
-        <div className="flex items-center gap-3 cursor-pointer group">
+        <div className="h-8 w-[1px] bg-outline-variant/30"></div>
+        <div className="flex items-center gap-2 cursor-pointer group">
           <div className="text-right hidden sm:block">
-            <p className="text-sm font-bold text-primary">Fingerspot HQ</p>
-            <p className="text-[10px] text-secondary uppercase tracking-tight">Main Server</p>
+            <p className="text-sm font-bold text-primary group-hover:text-primary-container transition-colors">Admin Super</p>
+            <p className="text-[12px] leading-4 text-secondary font-semibold" style={{ letterSpacing: "0.05em" }}>IT Manager</p>
           </div>
-          <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center"
-            style={{
-              backgroundColor: "rgba(255, 255, 255, 0.5)",
-              border: "1px solid rgba(255, 255, 255, 0.6)",
-            }}
-          >
-            <span className="material-symbols-outlined text-primary">business</span>
+          <div className="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center border border-primary/10">
+            <span className="material-symbols-outlined text-primary">person</span>
           </div>
         </div>
       </div>

@@ -1,116 +1,165 @@
+"use client";
+
+import { useState } from "react";
 import Sidebar from "../components/Sidebar";
 import Topbar from "../components/Topbar";
 
 export default function PengaturanPage() {
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [showWebhook, setShowWebhook] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: "transparent" }}>
       <Sidebar />
       <main className="ml-[68px] min-h-screen relative flex flex-col">
         <Topbar title="Pengaturan" />
-        <div className="p-6 lg:p-10 flex-1 flex flex-col gap-6">
-          <div>
-            <h2 className="text-[32px] font-semibold text-primary leading-10 tracking-tight">Pengaturan</h2>
-            <p className="text-secondary text-[14px] leading-5 mt-1">System configuration and preferences.</p>
-          </div>
+        <div className="px-8 flex items-center justify-center min-h-[calc(100vh-64px)]">
+          <div className="w-full max-w-2xl">
+            {/* Settings Form Card */}
+            <div className="glass-card rounded-2xl p-10 relative overflow-hidden">
+              {/* Decorative background elements */}
+              <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/5 rounded-full blur-3xl" />
+              <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-secondary/5 rounded-full blur-3xl" />
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-              <section className="rounded-2xl overflow-hidden" style={{ backgroundColor: "rgba(255, 255, 255, 0.4)", backdropFilter: "blur(12px) saturate(150%)", WebkitBackdropFilter: "blur(12px) saturate(150%)", border: "1px solid rgba(255, 255, 255, 0.6)", boxShadow: "0px 8px 32px rgba(0, 0, 0, 0.04)" }}>
-                <div className="px-6 py-4" style={{ borderBottom: "1px solid rgba(27, 27, 29, 0.08)" }}>
-                  <h3 className="text-[20px] font-semibold text-primary">Company Profile</h3>
+              <div className="relative z-10">
+                {/* Header */}
+                <div className="mb-10 text-center">
+                  <h3 className="text-[32px] leading-[40px] tracking-[-0.01em] font-semibold text-primary mb-2">
+                    Konfigurasi Sistem
+                  </h3>
+                  <p className="text-secondary text-[16px] leading-6">
+                    Kelola integrasi API dan parameter sinkronisasi Cloud.
+                  </p>
                 </div>
-                <div className="p-6 space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="flex flex-col gap-2">
-                      <label className="text-[12px] font-semibold text-secondary uppercase tracking-wider">Company Name</label>
-                      <input className="w-full bg-surface-container/50 border border-on-surface/[0.08] rounded-xl px-4 py-2.5 text-[14px] focus:ring-2 focus:ring-primary/10 focus:border-primary/30 outline-none transition-all" defaultValue="Fingerspot International" type="text" />
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <label className="text-[12px] font-semibold text-secondary uppercase tracking-wider">Email</label>
-                      <input className="w-full bg-surface-container/50 border border-on-surface/[0.08] rounded-xl px-4 py-2.5 text-[14px] focus:ring-2 focus:ring-primary/10 focus:border-primary/30 outline-none transition-all" defaultValue="admin@fingerspot.com" type="email" />
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <label className="text-[12px] font-semibold text-secondary uppercase tracking-wider">Address</label>
-                    <textarea className="w-full bg-surface-container/50 border border-on-surface/[0.08] rounded-xl px-4 py-2.5 text-[14px] focus:ring-2 focus:ring-primary/10 focus:border-primary/30 outline-none transition-all" rows={3} defaultValue="Jl. Teknologi No. 123, Jakarta Selatan, Indonesia" />
-                  </div>
-                  <button className="bg-primary text-white font-bold py-2.5 px-6 rounded-xl transition-all hover:bg-primary-container active:scale-95 flex items-center gap-2 shadow-lg shadow-primary/10 w-fit">
-                    <span className="material-symbols-outlined text-lg">save</span>
-                    Simpan Perubahan
-                  </button>
-                </div>
-              </section>
 
-              <section className="rounded-2xl overflow-hidden" style={{ backgroundColor: "rgba(255, 255, 255, 0.4)", backdropFilter: "blur(12px) saturate(150%)", WebkitBackdropFilter: "blur(12px) saturate(150%)", border: "1px solid rgba(255, 255, 255, 0.6)", boxShadow: "0px 8px 32px rgba(0, 0, 0, 0.04)" }}>
-                <div className="px-6 py-4" style={{ borderBottom: "1px solid rgba(27, 27, 29, 0.08)" }}>
-                  <h3 className="text-[20px] font-semibold text-primary">Notification Settings</h3>
-                </div>
-                <div className="p-6 space-y-4">
-                  {[
-                    { label: "Email Notifications", desc: "Receive email alerts for important events", checked: true },
-                    { label: "Late Arrival Alerts", desc: "Get notified when employees arrive late", checked: true },
-                    { label: "Absenteeism Reports", desc: "Daily summary of absent employees", checked: false },
-                    { label: "System Errors", desc: "Critical system error notifications", checked: true },
-                  ].map((item) => (
-                    <div key={item.label} className="flex items-center justify-between py-2">
-                      <div>
-                        <p className="text-[14px] font-bold text-primary">{item.label}</p>
-                        <p className="text-[12px] text-secondary">{item.desc}</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" defaultChecked={item.checked} className="sr-only peer" />
-                        <div className="w-11 h-6 bg-surface-container-highest peer-focus:ring-2 peer-focus:ring-primary/10 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                {/* Form */}
+                <form
+                  className="space-y-6"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    setIsSubmitting(true);
+                    setTimeout(() => {
+                      setIsSubmitting(false);
+                    }, 2000);
+                  }}
+                >
+                  {/* Cloud ID & Webhook Secret */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Cloud ID */}
+                    <div>
+                      <label className="block text-[12px] font-semibold text-primary mb-2 uppercase tracking-wider">
+                        Cloud ID
                       </label>
+                      <div className="relative">
+                        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">
+                          cloud
+                        </span>
+                        <input
+                          type="text"
+                          placeholder="FS-9988-CLOUD"
+                          className="w-full pl-12 pr-4 py-3 rounded-xl border border-outline-variant/30 bg-white/40 backdrop-blur-sm focus:ring-2 focus:ring-primary/10 focus:border-primary/30 outline-none transition-all text-[16px] leading-6"
+                        />
+                      </div>
                     </div>
-                  ))}
-                </div>
-              </section>
-            </div>
 
-            <div className="space-y-6">
-              <section className="rounded-2xl overflow-hidden" style={{ backgroundColor: "rgba(255, 255, 255, 0.4)", backdropFilter: "blur(12px) saturate(150%)", WebkitBackdropFilter: "blur(12px) saturate(150%)", border: "1px solid rgba(255, 255, 255, 0.6)", boxShadow: "0px 8px 32px rgba(0, 0, 0, 0.04)" }}>
-                <div className="px-6 py-4" style={{ borderBottom: "1px solid rgba(27, 27, 29, 0.08)" }}>
-                  <h3 className="text-[20px] font-semibold text-primary">Appearance</h3>
-                </div>
-                <div className="p-6 space-y-4">
-                  <div className="flex flex-col gap-2">
-                    <label className="text-[12px] font-semibold text-secondary uppercase tracking-wider">Theme</label>
-                    <select className="w-full bg-surface-container/50 border border-on-surface/[0.08] rounded-xl px-4 py-2.5 text-[14px] focus:ring-2 focus:ring-primary/10 focus:border-primary/30 outline-none transition-all">
-                      <option>Light</option>
-                      <option>Dark</option>
-                      <option>System</option>
-                    </select>
+                    {/* Webhook Secret */}
+                    <div>
+                      <label className="block text-[12px] font-semibold text-primary mb-2 uppercase tracking-wider">
+                        Webhook Secret
+                      </label>
+                      <div className="relative">
+                        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">
+                          key
+                        </span>
+                        <input
+                          type={showWebhook ? "text" : "password"}
+                          placeholder="••••••••••••"
+                          className="w-full pl-12 pr-4 py-3 rounded-xl border border-outline-variant/30 bg-white/40 backdrop-blur-sm focus:ring-2 focus:ring-primary/10 focus:border-primary/30 outline-none transition-all text-[16px] leading-6"
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex flex-col gap-2">
-                    <label className="text-[12px] font-semibold text-secondary uppercase tracking-wider">Language</label>
-                    <select className="w-full bg-surface-container/50 border border-on-surface/[0.08] rounded-xl px-4 py-2.5 text-[14px] focus:ring-2 focus:ring-primary/10 focus:border-primary/30 outline-none transition-all">
-                      <option>Bahasa Indonesia</option>
-                      <option>English</option>
-                    </select>
-                  </div>
-                </div>
-              </section>
 
-              <section className="rounded-2xl overflow-hidden" style={{ backgroundColor: "rgba(255, 255, 255, 0.4)", backdropFilter: "blur(12px) saturate(150%)", WebkitBackdropFilter: "blur(12px) saturate(150%)", border: "1px solid rgba(255, 255, 255, 0.6)", boxShadow: "0px 8px 32px rgba(0, 0, 0, 0.04)" }}>
-                <div className="px-6 py-4" style={{ borderBottom: "1px solid rgba(27, 27, 29, 0.08)" }}>
-                  <h3 className="text-[20px] font-semibold text-primary">API Configuration</h3>
-                </div>
-                <div className="p-6 space-y-4">
-                  <div className="flex flex-col gap-2">
-                    <label className="text-[12px] font-semibold text-secondary uppercase tracking-wider">API Key</label>
-                    <div className="flex gap-2">
-                      <input className="flex-1 bg-surface-container/50 border border-on-surface/[0.08] rounded-xl px-4 py-2.5 text-[14px] font-mono" defaultValue="fs_sk_xxxxxxxxxxxx" type="password" readOnly />
-                      <button className="px-4 py-2.5 rounded-xl border border-on-surface/[0.08] hover:bg-surface-variant/30 transition-colors">
-                        <span className="material-symbols-outlined text-secondary">visibility</span>
+                  {/* API Key */}
+                  <div>
+                    <label className="block text-[12px] font-semibold text-primary mb-2 uppercase tracking-wider">
+                      API Key
+                    </label>
+                    <div className="relative">
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">
+                        vpn_key
+                      </span>
+                      <input
+                        type={showApiKey ? "text" : "password"}
+                        defaultValue="ak_live_51M9pUuD3kZ2j8L0x"
+                        className="w-full pl-12 pr-12 py-3 rounded-xl border border-outline-variant/30 bg-white/40 backdrop-blur-sm focus:ring-2 focus:ring-primary/10 focus:border-primary/30 outline-none transition-all text-[16px] leading-6"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowApiKey(!showApiKey)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-outline hover:text-primary transition-colors"
+                      >
+                        <span className="material-symbols-outlined">
+                          {showApiKey ? "visibility_off" : "visibility"}
+                        </span>
                       </button>
                     </div>
                   </div>
-                  <button className="w-full bg-transparent hover:bg-surface-variant/30 text-primary font-bold py-2.5 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2 border border-on-surface/[0.08]" style={{ backgroundColor: "rgba(255, 255, 255, 0.4)", backdropFilter: "blur(12px) saturate(150%)", WebkitBackdropFilter: "blur(12px) saturate(150%)", border: "1px solid rgba(255, 255, 255, 0.6)", boxShadow: "0px 8px 32px rgba(0, 0, 0, 0.04)" }}>
-                    <span className="material-symbols-outlined text-lg">refresh</span>
-                    Regenerate Key
-                  </button>
-                </div>
-              </section>
+
+                  {/* Action Row */}
+                  <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-outline-variant/20">
+                    <div className="flex items-center gap-4 order-2 sm:order-1">
+                      <button
+                        type="button"
+                        className="flex items-center gap-2 px-6 py-3 rounded-xl border border-outline-variant/40 bg-surface/30 backdrop-blur-md text-primary font-bold text-[16px] leading-6 transition-all hover:-translate-y-0.5 hover:brightness-105 active:scale-[0.98]"
+                      >
+                        <span className="material-symbols-outlined">
+                          network_check
+                        </span>
+                        Test Koneksi
+                      </button>
+                      {/* Status Badge */}
+                      <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                        <span className="text-[11px] font-bold uppercase tracking-wider">
+                          Terhubung
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="order-1 sm:order-2 w-full sm:w-auto px-12 py-3 rounded-xl bg-primary text-white font-bold text-[16px] leading-6 shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 hover:brightness-105 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+                    >
+                      {isSubmitting ? "Menyimpan..." : "Simpan Perubahan"}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            {/* Info Module */}
+            <div className="mt-6 glass-card rounded-2xl p-4 flex items-start gap-4">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                <span className="material-symbols-outlined">info</span>
+              </div>
+              <div>
+                <h4 className="font-bold text-primary text-[16px] leading-6">
+                  Dokumentasi API
+                </h4>
+                <p className="text-secondary text-[14px] leading-5 mt-1">
+                  Gunakan konfigurasi di atas untuk menghubungkan server lokal
+                  Anda dengan layanan Cloud Fingerspot. Pastikan Webhook Secret
+                  sesuai dengan yang terdaftar di portal pengembang.
+                </p>
+                <a
+                  href="#"
+                  className="inline-block mt-2 text-primary font-bold text-[14px] leading-5 hover:underline"
+                >
+                  Pelajari selengkapnya →
+                </a>
+              </div>
             </div>
           </div>
         </div>

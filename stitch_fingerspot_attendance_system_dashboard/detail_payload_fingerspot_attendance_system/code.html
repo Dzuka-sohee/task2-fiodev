@@ -1,0 +1,347 @@
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Log Detail - Fingerspot Attendance System</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-error": "#ffffff",
+                        "secondary-fixed-dim": "#b7c8e1",
+                        "primary": "#1d2b3e",
+                        "secondary": "#505f76",
+                        "tertiary-fixed-dim": "#dfc299",
+                        "tertiary": "#38270a",
+                        "surface-dim": "#dbd9db",
+                        "on-surface": "#1b1b1d",
+                        "on-primary-fixed": "#0d1c2f",
+                        "on-tertiary-fixed-variant": "#574424",
+                        "on-secondary-container": "#54647a",
+                        "surface-variant": "#e4e2e4",
+                        "on-secondary-fixed": "#0b1c30",
+                        "inverse-on-surface": "#f2f0f2",
+                        "primary-container": "#334155",
+                        "tertiary-fixed": "#fcdeb3",
+                        "outline-variant": "#c5c6cd",
+                        "surface-container-highest": "#e4e2e4",
+                        "on-background": "#1b1b1d",
+                        "on-secondary-fixed-variant": "#38485d",
+                        "error-container": "#ffdad6",
+                        "surface-container-low": "#f5f3f5",
+                        "surface-container": "#efedef",
+                        "on-tertiary-fixed": "#281901",
+                        "primary-fixed-dim": "#b9c7e0",
+                        "surface-bright": "#fbf9fa",
+                        "on-secondary": "#ffffff",
+                        "primary-fixed": "#d5e3fd",
+                        "surface-tint": "#515f74",
+                        "error": "#ba1a1a",
+                        "on-primary-container": "#9eadc5",
+                        "surface": "#fbf9fa",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed-variant": "#3a485c",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-container": "#503d1e",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-fixed": "#d3e4fe",
+                        "outline": "#75777d",
+                        "inverse-primary": "#b9c7e0",
+                        "secondary-container": "#d0e1fb",
+                        "background": "#fbf9fa",
+                        "on-primary": "#ffffff",
+                        "inverse-surface": "#303032",
+                        "on-tertiary-container": "#c3a881",
+                        "on-surface-variant": "#44474c",
+                        "surface-container-high": "#eae7e9"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "md": "16px",
+                        "xl": "40px",
+                        "lg": "24px",
+                        "gutter": "20px",
+                        "container-margin": "32px",
+                        "base": "4px",
+                        "xs": "4px",
+                        "sm": "8px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "title-md": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "label-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "mono": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "title-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .glass-card {
+            background-color: rgba(255, 255, 255, 0.55);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(29, 43, 62, 0.08);
+            box-shadow: 0px 10px 30px rgba(51, 65, 85, 0.05);
+        }
+        .glass-nav {
+            backdrop-filter: blur(20px);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(29, 43, 62, 0.1); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(29, 43, 62, 0.2); }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-lg min-h-screen flex">
+<!-- SideNavBar (Shared Component) -->
+<aside class="fixed left-0 top-0 h-full w-[68px] hover:w-64 transition-all duration-300 z-50 overflow-hidden backdrop-blur-xl border-r border-on-surface/[0.08] flex flex-col py-lg group bg-surface/30"><div class="px-md mb-xl flex items-center gap-md">
+<div class="min-w-[36px] h-[36px] bg-primary rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-white" style="font-variation-settings: 'FILL' 1;">fingerprint</span>
+</div>
+<div class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary">Fingerspot</h1>
+<p class="text-label-md text-secondary tracking-widest uppercase">Attendance System</p>
+</div>
+</div>
+<nav class="flex-1 px-sm space-y-sm"><a class="flex items-center gap-md p-sm rounded-xl text-secondary hover:bg-surface-variant/50 transition-all duration-200 cursor-pointer active:scale-95 group/item" href="#">
+<span class="material-symbols-outlined p-xs">dashboard</span>
+<span class="opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap font-body-lg">Dashboard</span>
+</a>
+<a class="flex items-center gap-md p-sm rounded-xl text-secondary hover:bg-surface-variant/50 transition-all duration-200 cursor-pointer active:scale-95 group/item" href="#">
+<span class="material-symbols-outlined p-xs">calendar_today</span>
+<span class="opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap font-body-lg">Data Absensi</span>
+</a>
+<a class="flex items-center gap-md p-sm rounded-xl text-secondary hover:bg-surface-variant/50 transition-all duration-200 cursor-pointer active:scale-95 group/item" href="#">
+<span class="material-symbols-outlined p-xs">devices</span>
+<span class="opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap font-body-lg">Mesin</span>
+</a>
+<a class="flex items-center gap-md p-sm rounded-xl text-secondary hover:bg-surface-variant/50 transition-all duration-200 cursor-pointer active:scale-95 group/item" href="#">
+<span class="material-symbols-outlined p-xs">group</span>
+<span class="opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap font-body-lg">Data User</span>
+</a>
+<a class="flex items-center gap-md p-sm rounded-xl text-secondary hover:bg-surface-variant/50 transition-all duration-200 cursor-pointer active:scale-95 group/item" href="#">
+<span class="material-symbols-outlined p-xs">pin</span>
+<span class="opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap font-body-lg">Data PIN</span>
+</a>
+<a class="flex items-center gap-md p-sm rounded-xl text-primary font-bold border-r-4 border-primary bg-primary/5 transition-all duration-200 cursor-pointer active:scale-95 group/item" href="#">
+<span class="material-symbols-outlined p-xs" style="font-variation-settings: 'FILL' 1;">terminal</span>
+<span class="opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap font-body-lg">API Logs</span>
+</a>
+<a class="flex items-center gap-md p-sm rounded-xl text-secondary hover:bg-surface-variant/50 transition-all duration-200 cursor-pointer active:scale-95 group/item" href="#">
+<span class="material-symbols-outlined p-xs">webhook</span>
+<span class="opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap font-body-lg">Webhooks</span>
+</a>
+<a class="flex items-center gap-md p-sm rounded-xl text-secondary hover:bg-surface-variant/50 transition-all duration-200 cursor-pointer active:scale-95 group/item" href="#">
+<span class="material-symbols-outlined p-xs">settings</span>
+<span class="opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap font-body-lg">Settings</span>
+</a></nav></aside>
+<main class="flex-1 ml-[68px] flex flex-col min-h-screen">
+<!-- TopNavBar (Shared Component) -->
+<header class="sticky top-0 w-full z-40 bg-surface/85 backdrop-blur-xl border-b border-on-surface/[0.08] shadow-[0px_10px_30px_rgba(51,65,85,0.05)]">
+<div class="flex justify-between items-center h-16 px-lg">
+<div class="flex items-center gap-md">
+<button class="flex items-center gap-sm text-secondary hover:text-primary transition-colors font-title-md">
+<span class="material-symbols-outlined">arrow_back</span>
+<span class="">Back</span>
+</button>
+<div class="h-6 w-px bg-outline-variant/30"></div>
+<span class="text-title-md font-bold text-primary">Log Detail</span>
+</div>
+<div class="flex items-center gap-md">
+<span class="text-body-sm text-secondary hidden md:block">Log ID: <span class="font-mono">#LOG-88291-ZX</span></span>
+<div class="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A professional high-quality headshot of a modern HR manager in a clean, minimalist corporate office. The background is a soft-focus glass-walled conference room with neutral, professional lighting. The subject is wearing a professional charcoal grey blazer, conveying trust and transparency. The overall mood is focused and efficiently organized, matching a premium enterprise software aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDtiYrJcnyGx7zAdQSSfeaCWBuQ61StQGYep8s-flWfL3VwhM0OMqFT0ZkcArPGThSa0Z9Yzesv-kCljlYvXFCuZ0VBSigsl1F1DlKPFtss22LObB0zGj-_9MCVZehLoIfL1tHVLPzfA2eC-dj0GTVidtXYV_sa4QKYQbZG7SqpAqQ2HCUTEVI6J35rlWVBA1gxttMVm8dihIieMPwFR48DBARgJqUesBaqs1-AAY9B0Mui5SnTwWRTyfDP2F5Dtuf4RNYFarymMMjF">
+</div>
+</div>
+</div>
+</header>
+<!-- Main Canvas -->
+<div class="p-lg max-w-7xl mx-auto w-full space-y-lg" style="opacity: 1; transform: translateY(0px); transition: 0.5s ease-out;">
+<!-- Quick Info Cards -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-lg">
+<div class="glass-card rounded-xl p-lg flex items-center gap-lg">
+<div class="w-12 h-12 rounded-full bg-primary/5 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">schedule</span>
+</div>
+<div>
+<p class="text-label-md text-secondary uppercase tracking-wider">Timestamp</p>
+<p class="font-bold text-primary">Oct 24, 2023 · 14:32:01.442</p>
+</div>
+</div>
+<div class="glass-card rounded-xl p-lg flex items-center gap-lg">
+<div class="w-12 h-12 rounded-full bg-primary/5 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">code</span>
+</div>
+<div>
+<p class="text-label-md text-secondary uppercase tracking-wider">Command / Type</p>
+<p class="font-bold text-primary font-mono text-body-sm">PUSH_ATTENDANCE_RECORD</p>
+</div>
+</div>
+<div class="glass-card rounded-xl p-lg flex items-center gap-lg">
+<div class="w-12 h-12 rounded-full bg-primary/5 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">check_circle</span>
+</div>
+<div>
+<p class="text-label-md text-secondary uppercase tracking-wider">Status</p>
+<div class="flex items-center gap-sm">
+<span class="bg-green-100 text-green-700 px-sm py-1 rounded-full text-label-md font-bold uppercase tracking-tight">Success (200)</span>
+</div>
+</div>
+</div>
+</div>
+<!-- JSON Payload Viewer -->
+<div class="glass-card rounded-xl overflow-hidden flex flex-col h-[calc(100vh-320px)]">
+<div class="px-lg py-md border-b border-on-surface/[0.08] flex justify-between items-center bg-surface-container-low/50">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-secondary">data_object</span>
+<h2 class="font-bold text-primary font-title-md">Payload Details</h2>
+</div>
+<button class="flex items-center gap-sm px-md py-sm rounded-lg bg-primary text-white hover:bg-primary/90 transition-all active:scale-95 text-body-sm font-semibold" id="copy-btn">
+<span class="material-symbols-outlined text-[20px]">content_copy</span>
+<span class="">Copy JSON</span>
+</button>
+</div>
+<div class="flex-1 bg-[#1a212c] p-lg overflow-auto custom-scrollbar relative">
+<pre class="font-mono text-body-sm text-on-primary-container leading-relaxed"><span class="text-[#c3a881]">{</span>
+  <span class="text-[#b7c8e1]">"request_id"</span>: <span class="text-[#dfc299]">"req_01HJ7X2Q..."</span>,
+  <span class="text-[#b7c8e1]">"endpoint"</span>: <span class="text-[#dfc299]">"/api/v2/attendance/sync"</span>,
+  <span class="text-[#b7c8e1]">"method"</span>: <span class="text-[#dfc299]">"POST"</span>,
+  <span class="text-[#b7c8e1]">"payload"</span>: <span class="text-[#c3a881]">{</span>
+    <span class="text-[#b7c8e1]">"device_sn"</span>: <span class="text-[#dfc299]">"FS-992-K822"</span>,
+    <span class="text-[#b7c8e1]">"records"</span>: <span class="text-[#c3a881]">[</span>
+      <span class="text-[#c3a881]">{</span>
+        <span class="text-[#b7c8e1]">"user_id"</span>: <span class="text-[#dfc299]">"8821"</span>,
+        <span class="text-[#b7c8e1]">"name"</span>: <span class="text-[#dfc299]">"Alexander Smith"</span>,
+        <span class="text-[#b7c8e1]">"timestamp"</span>: <span class="text-[#dfc299]">"2023-10-24T14:31:55Z"</span>,
+        <span class="text-[#b7c8e1]">"type"</span>: <span class="text-[#dfc299]">"CHECK_IN"</span>,
+        <span class="text-[#b7c8e1]">"location_id"</span>: <span class="text-[#dfc299]">"HQ_MAIN_01"</span>,
+        <span class="text-[#b7c8e1]">"verification"</span>: <span class="text-[#dfc299]">"FINGERPRINT"</span>
+      <span class="text-[#c3a881]">}</span>,
+      <span class="text-[#c3a881]">{</span>
+        <span class="text-[#b7c8e1]">"user_id"</span>: <span class="text-[#dfc299]">"7719"</span>,
+        <span class="text-[#b7c8e1]">"name"</span>: <span class="text-[#dfc299]">"Elena Rodriquez"</span>,
+        <span class="text-[#b7c8e1]">"timestamp"</span>: <span class="text-[#dfc299]">"2023-10-24T14:32:01Z"</span>,
+        <span class="text-[#b7c8e1]">"type"</span>: <span class="text-[#dfc299]">"CHECK_IN"</span>,
+        <span class="text-[#b7c8e1]">"location_id"</span>: <span class="text-[#dfc299]">"HQ_MAIN_02"</span>,
+        <span class="text-[#b7c8e1]">"verification"</span>: <span class="text-[#dfc299]">"FACE_ID"</span>
+      <span class="text-[#c3a881]">}</span>
+    <span class="text-[#c3a881]">]</span>
+  <span class="text-[#c3a881]">}</span>,
+  <span class="text-[#b7c8e1]">"response"</span>: <span class="text-[#c3a881]">{</span>
+    <span class="text-[#b7c8e1]">"status"</span>: <span class="text-[#dfc299]">"success"</span>,
+    <span class="text-[#b7c8e1]">"processed_count"</span>: <span class="text-[#dfc299]">2</span>,
+    <span class="text-[#b7c8e1]">"errors"</span>: <span class="text-[#c3a881]">[]</span>
+  <span class="text-[#c3a881]">}</span>
+<span class="text-[#c3a881]">}</span></pre>
+</div>
+</div>
+<!-- Meta Data Section -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-lg pb-xl">
+<div class="glass-card rounded-xl p-lg">
+<h3 class="font-bold text-primary mb-md flex items-center gap-sm">
+<span class="material-symbols-outlined text-secondary">lan</span>
+                        Network Headers
+                    </h3>
+<div class="space-y-sm">
+<div class="flex justify-between py-sm border-b border-on-surface/[0.04]">
+<span class="text-body-sm text-secondary font-mono">User-Agent</span>
+<span class="text-body-sm font-mono text-primary">Fingerspot-Sync/4.1</span>
+</div>
+<div class="flex justify-between py-sm border-b border-on-surface/[0.04]">
+<span class="text-body-sm text-secondary font-mono">Content-Type</span>
+<span class="text-body-sm font-mono text-primary">application/json</span>
+</div>
+<div class="flex justify-between py-sm border-b border-on-surface/[0.04]">
+<span class="text-body-sm text-secondary font-mono">X-API-Version</span>
+<span class="text-body-sm font-mono text-primary">2023-01-01</span>
+</div>
+<div class="flex justify-between py-sm">
+<span class="text-body-sm text-secondary font-mono">IP Address</span>
+<span class="text-body-sm font-mono text-primary">192.168.10.22</span>
+</div>
+</div>
+</div>
+<div class="glass-card rounded-xl p-lg">
+<h3 class="font-bold text-primary mb-md flex items-center gap-sm">
+<span class="material-symbols-outlined text-secondary">history_edu</span>
+                        Audit Log
+                    </h3>
+<div class="relative pl-6 space-y-lg before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-[2px] before:bg-outline-variant/30">
+<div class="relative">
+<div class="absolute -left-[23px] top-1 w-[12px] h-[12px] rounded-full bg-primary border-4 border-white shadow-sm"></div>
+<p class="text-body-sm font-bold text-primary">System Received Event</p>
+<p class="text-label-md text-secondary">Oct 24, 14:32:01.442</p>
+</div>
+<div class="relative">
+<div class="absolute -left-[23px] top-1 w-[12px] h-[12px] rounded-full bg-primary-fixed-dim border-4 border-white shadow-sm"></div>
+<p class="text-body-sm font-bold text-primary">Schema Validated</p>
+<p class="text-label-md text-secondary">Oct 24, 14:32:01.455</p>
+</div>
+<div class="relative">
+<div class="absolute -left-[23px] top-1 w-[12px] h-[12px] rounded-full bg-green-400 border-4 border-white shadow-sm"></div>
+<p class="text-body-sm font-bold text-primary">Database Commit Success</p>
+<p class="text-label-md text-secondary">Oct 24, 14:32:01.502</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<script>
+        document.getElementById('copy-btn').addEventListener('click', function() {
+            const btn = this;
+            const originalText = btn.innerHTML;
+            
+            // Interaction effect
+            btn.innerHTML = '<span class="material-symbols-outlined text-[20px]">check</span><span>Copied!</span>';
+            btn.classList.replace('bg-primary', 'bg-green-600');
+            
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.classList.replace('bg-green-600', 'bg-primary');
+            }, 2000);
+        });
+
+        // Simple Fade-in effect for the main container
+        window.addEventListener('DOMContentLoaded', () => {
+            const canvas = document.querySelector('.p-lg');
+            canvas.style.opacity = '0';
+            canvas.style.transform = 'translateY(10px)';
+            canvas.style.transition = 'all 0.5s ease-out';
+            
+            requestAnimationFrame(() => {
+                canvas.style.opacity = '1';
+                canvas.style.transform = 'translateY(0)';
+            });
+        });
+    </script>
+
+
+</body></html>

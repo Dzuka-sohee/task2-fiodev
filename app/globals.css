@@ -1,10 +1,10 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-background: #eae8e7 !important;
-  --color-surface: #eae8e7 !important;
+  --color-background: #fbf9fa !important;
+  --color-surface: #fbf9fa !important;
   --color-surface-dim: #dbd9db !important;
-  --color-surface-bright: #eae8e7 !important;
+  --color-surface-bright: #fbf9fa !important;
   --color-surface-container-lowest: #ffffff !important;
   --color-surface-container-low: #f5f3f5 !important;
   --color-surface-container: #efedef !important;
@@ -16,10 +16,14 @@
   --color-on-primary: #ffffff !important;
   --color-primary-container: #334155 !important;
   --color-on-primary-container: #9eadc5 !important;
+  --color-primary-fixed: #d5e3fd !important;
+  --color-primary-fixed-dim: #b9c7e0 !important;
   --color-secondary: #505f76 !important;
   --color-on-secondary: #ffffff !important;
   --color-secondary-container: #d0e1fb !important;
   --color-on-secondary-container: #54647a !important;
+  --color-secondary-fixed: #d3e4fe !important;
+  --color-secondary-fixed-dim: #b7c8e1 !important;
   --color-outline: #75777d !important;
   --color-outline-variant: #c5c6cd !important;
   --color-error: #ba1a1a !important;
@@ -28,6 +32,14 @@
   --color-on-error-container: #93000a !important;
   --color-tertiary: #38270a !important;
   --color-tertiary-container: #503d1e !important;
+  --color-tertiary-fixed: #fcdeb3 !important;
+  --color-tertiary-fixed-dim: #dfc299 !important;
+  --color-on-tertiary-container: #c3a881 !important;
+  --color-on-tertiary-fixed-variant: #574424 !important;
+  --color-inverse-surface: #303032 !important;
+  --color-inverse-on-surface: #f2f0f2 !important;
+  --color-inverse-primary: #b9c7e0 !important;
+  --color-surface-tint: #515f74 !important;
 
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
@@ -37,15 +49,24 @@
 }
 
 html {
-  background-color: #eae8e7 !important;
+  background-color: #fbf9fa !important;
 }
 
 body {
-  background-color: #eae8e7 !important;
+  background: radial-gradient(circle at top right, #f2f0f2 0%, #fbf9fa 100%);
+  background-color: #fbf9fa !important;
   color: #1b1b1d !important;
   font-family: var(--font-sans);
   margin: 0;
   padding: 0;
+}
+
+.glass-card {
+  background-color: rgba(251, 249, 250, 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(27, 27, 29, 0.08);
+  box-shadow: 0px 10px 30px rgba(51, 65, 85, 0.05);
 }
 
 .material-symbols-outlined {
