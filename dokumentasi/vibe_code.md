@@ -344,8 +344,8 @@ Body    : {"trans_id":"1", "cloud_id":""}
 - Next.js App Router: https://nextjs.org/docs/app
 
 ### Note
-1. Setiap body API yg membutuhkan Cloud ID, buat agar mengambil dari database tabel settings
-2. Pada Halaman Mesin kan ada 2 dropdown yg meminta pilihan mesin, nah itu buat agar mengambil dari database tabel settings yaitu Cloud ID nya saja
-3. Maks range hari ketika get attlog yaitu 2 hari jadi setting agar hanya bisa filter 2 hari
-4. Untuk hasil get user info langsung tampilkan di data user
-5. Setiap progres yg telah kamu lakukan edit .md ini di bagian checklist backend
+    1. Setiap body API yg membutuhkan Cloud ID, buat agar mengambil dari database tabel settings
+    2. Pada Halaman Mesin kan ada 2 dropdown yg meminta pilihan mesin, nah itu buat agar mengambil dari database tabel settings yaitu Cloud ID nya saja
+    3. Maks range hari ketika get attlog yaitu 2 hari jadi setting agar hanya bisa filter 2 hari
+    4. Untuk hasil get user info langsung tampilkan di data user
+    5. Setiap progres yg telah kamu lakukan edit .md ini di bagian checklist backend
