@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 import Topbar from "../components/Topbar";
+import { createClient } from "@/lib/supabase/client";
 
 const historyData = [
   {
@@ -47,6 +48,19 @@ const statusStyles: Record<string, string> = {
 
 export default function MesinPage() {
   const [currentTime, setCurrentTime] = useState("00:00:00");
+  const [cloudId, setCloudId] = useState("");
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase
+      .from("settings")
+      .select("value")
+      .eq("key", "cloud_id")
+      .single()
+      .then(({ data }) => {
+        if (data?.value) setCloudId(data.value);
+      });
+  }, []);
 
   useEffect(() => {
     function tick() {
@@ -85,9 +99,11 @@ export default function MesinPage() {
                 </label>
                 <div className="relative">
                   <select className="w-full h-12 px-4 bg-surface-container-low border border-outline-variant rounded-xl appearance-none focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all">
-                    <option>FINGERS-8822-X1</option>
-                    <option>FINGERS-9933-A2</option>
-                    <option>FINGERS-1144-B3</option>
+                    {cloudId ? (
+                      <option value={cloudId}>{cloudId}</option>
+                    ) : (
+                      <option>Cloud ID belum dikonfigurasi</option>
+                    )}
                   </select>
                   <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-secondary">
                     expand_more
@@ -160,9 +176,11 @@ export default function MesinPage() {
                   </label>
                   <div className="relative">
                     <select className="w-full h-12 px-4 bg-surface-container-low border border-outline-variant rounded-xl appearance-none focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all">
-                      <option>FINGERS-8822-X1 (Main Lobby)</option>
-                      <option>FINGERS-9933-A2 (HR Room)</option>
-                      <option>FINGERS-1144-B3 (Production)</option>
+                      {cloudId ? (
+                        <option value={cloudId}>{cloudId}</option>
+                      ) : (
+                        <option>Cloud ID belum dikonfigurasi</option>
+                      )}
                     </select>
                     <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-secondary">
                       expand_more

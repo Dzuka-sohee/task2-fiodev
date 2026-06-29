@@ -1,13 +1,53 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 import Topbar from "../components/Topbar";
+import { createClient } from "@/lib/supabase/client";
 
 export default function PengaturanPage() {
   const [showApiKey, setShowApiKey] = useState(false);
   const [showWebhook, setShowWebhook] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [cloudId, setCloudId] = useState("");
+  const [apiKey, setApiKey] = useState("");
+  const [webhookSecret, setWebhookSecret] = useState("");
+  const [saveMessage, setSaveMessage] = useState("");
+
+  useEffect(() => {
+    const loadSettings = async () => {
+      const supabase = createClient();
+      const { data } = await supabase.from("settings").select("key, value");
+      if (data) {
+        data.forEach((s) => {
+          if (s.key === "cloud_id") setCloudId(s.value);
+          if (s.key === "api_key") setApiKey(s.value);
+          if (s.key === "webhook_secret") setWebhookSecret(s.value);
+        });
+      }
+    };
+    loadSettings();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSaveMessage("");
+
+    const supabase = createClient();
+    const { error } = await supabase.from("settings").upsert(
+      [
+        { key: "cloud_id", value: cloudId },
+        { key: "api_key", value: apiKey },
+        { key: "webhook_secret", value: webhookSecret },
+      ],
+      { onConflict: "key" }
+    );
+
+    setIsSubmitting(false);
+    setSaveMessage(error ? `Gagal: ${error.message}` : "Berhasil disimpan");
+    setTimeout(() => setSaveMessage(""), 3000);
+  };
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "transparent" }}>
@@ -16,14 +56,11 @@ export default function PengaturanPage() {
         <Topbar title="Pengaturan" />
         <div className="px-8 flex items-center justify-center min-h-[calc(100vh-64px)]">
           <div className="w-full max-w-2xl">
-            {/* Settings Form Card */}
             <div className="glass-card rounded-2xl p-10 relative overflow-hidden">
-              {/* Decorative background elements */}
               <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/5 rounded-full blur-3xl" />
               <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-secondary/5 rounded-full blur-3xl" />
 
               <div className="relative z-10">
-                {/* Header */}
                 <div className="mb-10 text-center">
                   <h3 className="text-[32px] leading-[40px] tracking-[-0.01em] font-semibold text-primary mb-2">
                     Konfigurasi Sistem
@@ -33,20 +70,8 @@ export default function PengaturanPage() {
                   </p>
                 </div>
 
-                {/* Form */}
-                <form
-                  className="space-y-6"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    setIsSubmitting(true);
-                    setTimeout(() => {
-                      setIsSubmitting(false);
-                    }, 2000);
-                  }}
-                >
-                  {/* Cloud ID & Webhook Secret */}
+                <form className="space-y-6" onSubmit={handleSubmit}>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Cloud ID */}
                     <div>
                       <label className="block text-[12px] font-semibold text-primary mb-2 uppercase tracking-wider">
                         Cloud ID
@@ -57,13 +82,14 @@ export default function PengaturanPage() {
                         </span>
                         <input
                           type="text"
+                          value={cloudId}
+                          onChange={(e) => setCloudId(e.target.value)}
                           placeholder="FS-9988-CLOUD"
                           className="w-full pl-12 pr-4 py-3 rounded-xl border border-outline-variant/30 bg-white/40 backdrop-blur-sm focus:ring-2 focus:ring-primary/10 focus:border-primary/30 outline-none transition-all text-[16px] leading-6"
                         />
                       </div>
                     </div>
 
-                    {/* Webhook Secret */}
                     <div>
                       <label className="block text-[12px] font-semibold text-primary mb-2 uppercase tracking-wider">
                         Webhook Secret
@@ -74,6 +100,8 @@ export default function PengaturanPage() {
                         </span>
                         <input
                           type={showWebhook ? "text" : "password"}
+                          value={webhookSecret}
+                          onChange={(e) => setWebhookSecret(e.target.value)}
                           placeholder="••••••••••••"
                           className="w-full pl-12 pr-4 py-3 rounded-xl border border-outline-variant/30 bg-white/40 backdrop-blur-sm focus:ring-2 focus:ring-primary/10 focus:border-primary/30 outline-none transition-all text-[16px] leading-6"
                         />
@@ -81,7 +109,6 @@ export default function PengaturanPage() {
                     </div>
                   </div>
 
-                  {/* API Key */}
                   <div>
                     <label className="block text-[12px] font-semibold text-primary mb-2 uppercase tracking-wider">
                       API Key
@@ -92,7 +119,8 @@ export default function PengaturanPage() {
                       </span>
                       <input
                         type={showApiKey ? "text" : "password"}
-                        defaultValue="ak_live_51M9pUuD3kZ2j8L0x"
+                        value={apiKey}
+                        onChange={(e) => setApiKey(e.target.value)}
                         className="w-full pl-12 pr-12 py-3 rounded-xl border border-outline-variant/30 bg-white/40 backdrop-blur-sm focus:ring-2 focus:ring-primary/10 focus:border-primary/30 outline-none transition-all text-[16px] leading-6"
                       />
                       <button
@@ -107,7 +135,6 @@ export default function PengaturanPage() {
                     </div>
                   </div>
 
-                  {/* Action Row */}
                   <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-outline-variant/20">
                     <div className="flex items-center gap-4 order-2 sm:order-1">
                       <button
@@ -119,7 +146,6 @@ export default function PengaturanPage() {
                         </span>
                         Test Koneksi
                       </button>
-                      {/* Status Badge */}
                       <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
                         <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                         <span className="text-[11px] font-bold uppercase tracking-wider">
@@ -135,11 +161,15 @@ export default function PengaturanPage() {
                       {isSubmitting ? "Menyimpan..." : "Simpan Perubahan"}
                     </button>
                   </div>
+                  {saveMessage && (
+                    <p className="text-center text-sm font-medium text-primary">
+                      {saveMessage}
+                    </p>
+                  )}
                 </form>
               </div>
             </div>
 
-            {/* Info Module */}
             <div className="mt-6 glass-card rounded-2xl p-4 flex items-start gap-4">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
                 <span className="material-symbols-outlined">info</span>

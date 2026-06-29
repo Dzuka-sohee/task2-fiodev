@@ -309,33 +309,33 @@ Body    : {"trans_id":"1", "cloud_id":""}
 ## ✅ Checklist Backend
 
 ### Database
-- [ ] Buat tabel `attlogs`
-- [ ] Buat tabel `userinfos`
-- [ ] Buat tabel `pins`
-- [ ] Buat tabel `api_requests`
-- [ ] Buat tabel `webhook_logs`
-- [ ] Buat tabel `command_logs`
-- [ ] Buat tabel `settings` + seed 3 row (`cloud_id`, `api_key`, `webhook_secret`) dengan value kosong
-- [ ] Pastikan halaman Pengaturan melakukan upsert ke tabel `settings` saat form disimpan
-- [ ] Pastikan `lib/fingerspot.ts` membaca `api_key` dan `cloud_id` dari tabel `settings`
-- [ ] Buat Supabase function `attendance_daily_count`
+- [x] Buat tabel `attlogs`
+- [x] Buat tabel `userinfos`
+- [x] Buat tabel `pins`
+- [x] Buat tabel `api_requests`
+- [x] Buat tabel `webhook_logs`
+- [x] Buat tabel `command_logs`
+- [x] Buat tabel `settings` + seed 3 row (`cloud_id`, `api_key`, `webhook_secret`) dengan value kosong
+- [x] Pastikan halaman Pengaturan melakukan upsert ke tabel `settings` saat form disimpan
+- [x] Pastikan `lib/fingerspot.ts` membaca `api_key` dan `cloud_id` dari tabel `settings`
+- [x] Buat Supabase function `attendance_daily_count`
 
 ### Helper Files
-- [ ] `lib/supabase/client.ts`
-- [ ] `lib/supabase/server.ts`
-- [ ] `lib/fingerspot.ts`
-- [ ] `lib/webhook.ts`
-- [ ] `lib/utils.ts`
+- [x] `lib/supabase/client.ts`
+- [x] `lib/supabase/server.ts`
+- [x] `lib/fingerspot.ts`
+- [x] `lib/webhook.ts`
+- [x] `lib/utils.ts`
 
 ### API Routes (`mesin/`)
-- [ ] `get-attlog`
-- [ ] `get-userinfo`
-- [ ] `set-userinfo`
-- [ ] `delete-userinfo`
-- [ ] `get-all-pin`
-- [ ] `set-time`
-- [ ] `register-online`
-- [ ] `restart`
+- [x] `get-attlog`
+- [x] `get-userinfo`
+- [x] `set-userinfo`
+- [x] `delete-userinfo`
+- [x] `get-all-pin`
+- [x] `set-time`
+- [x] `register-online`
+- [x] `restart`
 
 ## 📎 Referensi
 
