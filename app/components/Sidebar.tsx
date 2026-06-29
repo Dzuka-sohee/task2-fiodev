@@ -18,7 +18,7 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="fixed left-0 top-0 h-full w-[68px] hover:w-64 transition-all duration-300 z-50 overflow-hidden bg-surface/30 backdrop-blur-xl border-r border-on-surface/[0.04] shadow-lg flex flex-col py-6 group">
+    <aside className="fixed left-0 top-0 h-full w-[68px] hover:w-64 transition-all duration-300 z-50 overflow-hidden bg-white/20 backdrop-blur-[24px] border-r border-black/[0.06] shadow-[4px_0_32px_rgba(0,0,0,0.08)] flex flex-col py-6 group">
       <div className="flex items-center px-6 mb-10 overflow-hidden whitespace-nowrap">
         <span className="material-symbols-outlined text-primary text-3xl mr-4" style={{ fontVariationSettings: "'FILL' 1" }}>fingerprint</span>
         <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity duration-300">

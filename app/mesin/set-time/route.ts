@@ -19,7 +19,10 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (logError) {
-    return NextResponse.json({ error: logError.message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: `Gagal insert log: ${logError.message}` },
+      { status: 500 }
+    );
   }
 
   try {
@@ -27,9 +30,9 @@ export async function POST(request: NextRequest) {
       "https://developer.fingerspot.io/api/set_time",
       {
         trans_id: trans_id ?? "1",
-        cloud_id: "",
         timezone,
-      }
+      },
+      supabase
     );
 
     const finalStatus = result.success ? "success" : "failed";
@@ -39,7 +42,13 @@ export async function POST(request: NextRequest) {
       .update({ status: finalStatus, notes: result.message })
       .eq("id", pendingLog.id);
 
-    return NextResponse.json(result);
+    return NextResponse.json({
+      success: result.success,
+      message: result.success
+        ? "Command dikirim. Waktu mesin akan disinkronkan beberapa saat."
+        : result.message,
+      requestId: pendingLog.id,
+    });
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
@@ -49,6 +58,9 @@ export async function POST(request: NextRequest) {
       .update({ status: "failed", notes: errorMessage })
       .eq("id", pendingLog.id);
 
-    return NextResponse.json({ error: errorMessage }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: errorMessage },
+      { status: 500 }
+    );
   }
 }

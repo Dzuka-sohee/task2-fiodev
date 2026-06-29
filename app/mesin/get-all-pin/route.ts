@@ -19,7 +19,10 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (reqError) {
-    return NextResponse.json({ error: reqError.message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: `Gagal insert request: ${reqError.message}` },
+      { status: 500 }
+    );
   }
 
   try {
@@ -27,67 +30,25 @@ export async function POST(request: NextRequest) {
       "https://developer.fingerspot.io/api/get_all_pin",
       {
         trans_id: trans_id ?? "1",
-        cloud_id: "",
-      }
+      },
+      supabase
     );
 
-    if (result.success) {
-      const responseData = result.data as Record<string, unknown>;
-      const pinData = responseData?.data;
-
-      if (Array.isArray(pinData)) {
-        const pinItems = pinData as Array<{
-          pin: string;
-          device_sn: string;
-        }>;
-
-        const pinsToInsert = pinItems.map((item) => ({
-          pin: item.pin,
-          device_sn: item.device_sn,
-          fetched_at: new Date().toISOString(),
-        }));
-
-        await supabase.from("pins").upsert(pinsToInsert);
-
-        for (const item of pinItems) {
-          const userinfoResult = await callFingerspot(
-            "https://developer.fingerspot.io/api/get_userinfo",
-            {
-              trans_id: trans_id ?? "1",
-              cloud_id: "",
-              pin: item.pin,
-            }
-          );
-
-          if (userinfoResult.success) {
-            const infoData = userinfoResult.data as Record<string, unknown>;
-            const info = infoData?.data as Record<string, unknown> | undefined;
-            if (info) {
-              await supabase.from("userinfos").upsert(
-                {
-                  pin: item.pin,
-                  name: info.name ?? null,
-                  privilege: info.privilege ?? null,
-                  password: info.password ?? null,
-                  card_no: info.rfid ?? null,
-                  raw_payload: info,
-                },
-                { onConflict: "pin" }
-              );
-            }
-          }
-        }
-      }
-    }
-
+    // Update status berdasarkan response API
     const finalStatus = result.success ? "success" : "failed";
-
     await supabase
       .from("api_requests")
       .update({ status: finalStatus, response: result.data })
       .eq("id", pendingRequest.id);
 
-    return NextResponse.json(result);
+    // Data akan datang via webhook ke Edge Function, bukan di sini
+    return NextResponse.json({
+      success: result.success,
+      message: result.success
+        ? "Command dikirim. Data akan muncul beberapa saat setelah diproses mesin."
+        : result.message,
+      requestId: pendingRequest.id,
+    });
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
@@ -97,6 +58,9 @@ export async function POST(request: NextRequest) {
       .update({ status: "failed", response: { error: errorMessage } })
       .eq("id", pendingRequest.id);
 
-    return NextResponse.json({ error: errorMessage }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: errorMessage },
+      { status: 500 }
+    );
   }
 }

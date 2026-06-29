@@ -1,130 +1,205 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 import Topbar from "../components/Topbar";
+import { createClient } from "@/lib/supabase/client";
 
-const webhookLogs = [
-  {
-    id: "01",
-    time: "2023-11-27 08:15:32",
-    event: "ATTENDANCE_CHECKIN",
-    endpoint: "https://api.internal-hr.com/v1/sync",
-    status: "200 OK",
-    statusType: "success",
-  },
-  {
-    id: "02",
-    time: "2023-11-27 08:14:01",
-    event: "USER_UPDATE",
-    endpoint: "https://webhook.site/b2a1...",
-    status: "503 ERROR",
-    statusType: "error",
-  },
-  {
-    id: "03",
-    time: "2023-11-27 08:10:45",
-    event: "ATTENDANCE_CHECKOUT",
-    endpoint: "https://api.internal-hr.com/v1/sync",
-    status: "200 OK",
-    statusType: "success",
-  },
-  {
-    id: "04",
-    time: "2023-11-27 07:55:12",
-    event: "DEVICE_OFFLINE",
-    endpoint: "https://monitoring.fingerspot.com/log",
-    status: "408 TIMEOUT",
-    statusType: "warning",
-  },
-];
+interface WebhookLog {
+  id: string;
+  event_type: string | null;
+  device_sn: string | null;
+  status: string;
+  raw_payload: any;
+  created_at: string;
+}
+
+const PAGE_SIZE = 20;
 
 const statusStyles: Record<string, string> = {
-  success:
-    "bg-green-100/50 text-green-700 border border-green-200",
-  error:
-    "bg-error-container/30 text-error border border-error/10",
-  warning:
-    "bg-orange-100/50 text-orange-700 border border-orange-200",
+  received: "bg-blue-100/50 text-blue-700 border border-blue-200",
+  processed: "bg-green-100/50 text-green-700 border border-green-200",
+  failed: "bg-error-container/30 text-error border border-error/10",
 };
 
 const statusDotColors: Record<string, string> = {
-  success: "bg-green-500",
-  error: "bg-error",
-  warning: "bg-orange-500",
+  received: "bg-blue-500",
+  processed: "bg-green-500",
+  failed: "bg-error",
 };
 
-const barData = [
-  { height: "80%", className: "bg-primary/20" },
-  { height: "85%", className: "bg-primary/30" },
-  { height: "40%", className: "bg-primary/10" },
-  { height: "75%", className: "bg-primary/25" },
-  { height: "90%", className: "bg-primary/35" },
-  { height: "55%", className: "bg-primary/15" },
-  { height: "95%", className: "bg-primary/40" },
-  { height: "65%", className: "bg-primary/20" },
-  { height: "80%", className: "bg-primary/30" },
-  { height: "30%", className: "bg-primary/10" },
-  { height: "70%", className: "bg-primary/25" },
-  { height: "100%", className: "bg-primary/40" },
-];
-
 export default function WebhookPage() {
+  const [logs, setLogs] = useState<WebhookLog[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState(new Date().toISOString().split("T")[0]);
+  const [filterEvent, setFilterEvent] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [page, setPage] = useState(1);
+  const [stats, setStats] = useState({ total: 0, received: 0, processed: 0, failed: 0 });
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    const supabase = createClient();
+
+    let query = supabase
+      .from("webhook_logs")
+      .select("*", { count: "exact" })
+      .order("created_at", { ascending: false });
+
+    if (startDate) {
+      query = query.gte("created_at", `${startDate}T00:00:00`);
+    }
+    if (endDate) {
+      query = query.lte("created_at", `${endDate}T23:59:59`);
+    }
+
+    const { data, error } = await query;
+
+    if (!error && data) {
+      setLogs(data);
+
+      const received = data.filter((l) => l.status === "received").length;
+      const processed = data.filter((l) => l.status === "processed").length;
+      const failed = data.filter((l) => l.status === "failed").length;
+      setStats({ total: data.length, received, processed, failed });
+    }
+    setLoading(false);
+  };
+
+  const filteredLogs = logs.filter((l) => {
+    if (filterEvent !== "all" && l.event_type !== filterEvent) return false;
+    if (filterStatus !== "all" && l.status !== filterStatus) return false;
+    return true;
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filteredLogs.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paginatedLogs = filteredLogs.slice(
+    (safePage - 1) * PAGE_SIZE,
+    safePage * PAGE_SIZE
+  );
+
+  const handleExport = () => {
+    const headers = ["No", "Tanggal", "Waktu", "Event Type", "Device SN", "Status"];
+    const rows = filteredLogs.map((l, i) => {
+      const d = new Date(l.created_at);
+      return [
+        i + 1,
+        d.toLocaleDateString("id-ID"),
+        d.toLocaleTimeString("id-ID"),
+        l.event_type || "-",
+        l.device_sn || "-",
+        l.status,
+      ];
+    });
+
+    const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `webhook-logs-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="min-h-screen bg-background text-on-background">
       <Sidebar />
       <main className="ml-[68px] min-h-screen relative flex flex-col">
         <Topbar title="Riwayat Webhook" />
         <div className="p-6 lg:p-10 flex flex-col gap-6">
-          <div className="flex flex-col gap-1">
-            <h2 className="font-headline-lg text-headline-lg text-primary">
-              Log Webhook Berjalan
-            </h2>
-            <p className="font-body-lg text-body-lg text-secondary max-w-2xl">
-              Pantau semua aktivitas pengiriman data otomatis dari sistem ke
-              endpoint URL yang telah dikonfigurasi.
-            </p>
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div>
+              <h2 className="font-headline-lg text-headline-lg text-primary">
+                Log Webhook Berjalan
+              </h2>
+              <p className="font-body-lg text-body-lg text-secondary max-w-2xl">
+                Pantau semua aktivitas pengiriman data otomatis dari sistem ke
+                endpoint URL yang telah dikonfigurasi.
+              </p>
+            </div>
+            <button
+              onClick={handleExport}
+              className="bg-primary text-on-primary px-6 py-2.5 rounded-lg font-label-md text-label-md flex items-center gap-2 hover:bg-primary-container transition-all active:scale-95 shadow-lg shadow-primary/10"
+            >
+              <span className="material-symbols-outlined text-sm">download</span>
+              Export Log
+            </button>
           </div>
 
           <div className="glass-card rounded-xl p-4 flex flex-wrap items-center gap-6">
             <div className="flex flex-col gap-1 min-w-[200px]">
               <label className="font-label-md text-label-md text-secondary ml-1">
-                Rentang Waktu
+                Start Date
               </label>
               <input
                 type="date"
                 className="w-full bg-white/50 border border-outline-variant/30 rounded-lg px-4 py-2 font-body-sm text-body-sm focus:ring-2 focus:ring-primary/10 focus:outline-none transition-all"
+                value={startDate}
+                onChange={(e) => { setStartDate(e.target.value); setPage(1); }}
+              />
+            </div>
+            <div className="flex flex-col gap-1 min-w-[200px]">
+              <label className="font-label-md text-label-md text-secondary ml-1">
+                End Date
+              </label>
+              <input
+                type="date"
+                className="w-full bg-white/50 border border-outline-variant/30 rounded-lg px-4 py-2 font-body-sm text-body-sm focus:ring-2 focus:ring-primary/10 focus:outline-none transition-all"
+                value={endDate}
+                onChange={(e) => { setEndDate(e.target.value); setPage(1); }}
               />
             </div>
             <div className="flex flex-col gap-1 min-w-[180px]">
               <label className="font-label-md text-label-md text-secondary ml-1">
                 Event Type
               </label>
-              <select className="w-full bg-white/50 border border-outline-variant/30 rounded-lg px-4 py-2 font-body-sm text-body-sm focus:ring-2 focus:ring-primary/10 focus:outline-none appearance-none cursor-pointer">
-                <option value="">Semua Event</option>
-                <option value="checkin">Check-In</option>
-                <option value="checkout">Check-Out</option>
-                <option value="user_created">User Created</option>
-                <option value="device_offline">Device Offline</option>
+              <select
+                className="w-full bg-white/50 border border-outline-variant/30 rounded-lg px-4 py-2 font-body-sm text-body-sm focus:ring-2 focus:ring-primary/10 focus:outline-none appearance-none cursor-pointer"
+                value={filterEvent}
+                onChange={(e) => { setFilterEvent(e.target.value); setPage(1); }}
+              >
+                <option value="all">Semua Event</option>
+                <option value="get_userid_list">Get User ID List</option>
+                <option value="attlog">Attendance Log</option>
+                <option value="realtime_attlog">Realtime Attendance</option>
+                <option value="get_attlog">Get Attendance</option>
+                <option value="get_userinfo">Get User Info</option>
+                <option value="set_userinfo">Set User Info</option>
+                <option value="delete_userinfo">Delete User Info</option>
+                <option value="set_time">Set Time</option>
+                <option value="restart">Restart</option>
+                <option value="register_online">Register Online</option>
               </select>
             </div>
             <div className="flex flex-col gap-1 min-w-[150px]">
               <label className="font-label-md text-label-md text-secondary ml-1">
                 Status
               </label>
-              <select className="w-full bg-white/50 border border-outline-variant/30 rounded-lg px-4 py-2 font-body-sm text-body-sm focus:ring-2 focus:ring-primary/10 focus:outline-none appearance-none cursor-pointer">
-                <option value="">Semua Status</option>
-                <option value="200">Success (200)</option>
-                <option value="400">Client Error (4xx)</option>
-                <option value="500">Server Error (5xx)</option>
+              <select
+                className="w-full bg-white/50 border border-outline-variant/30 rounded-lg px-4 py-2 font-body-sm text-body-sm focus:ring-2 focus:ring-primary/10 focus:outline-none appearance-none cursor-pointer"
+                value={filterStatus}
+                onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
+              >
+                <option value="all">Semua Status</option>
+                <option value="received">Received</option>
+                <option value="processed">Processed</option>
+                <option value="failed">Failed</option>
               </select>
             </div>
             <div className="flex-grow"></div>
-            <button className="bg-primary text-on-primary px-6 py-2.5 rounded-lg font-label-md text-label-md flex items-center gap-2 hover:bg-primary-container transition-all active:scale-95 shadow-lg shadow-primary/10">
-              <span className="material-symbols-outlined text-sm">
-                filter_alt
-              </span>
+            <button
+              onClick={loadData}
+              className="bg-primary text-on-primary px-6 py-2.5 rounded-lg font-label-md text-label-md flex items-center gap-2 hover:bg-primary-container transition-all active:scale-95 shadow-lg shadow-primary/10"
+            >
+              <span className="material-symbols-outlined text-sm">filter_alt</span>
               Terapkan Filter
-            </button>
-            <button className="bg-surface-variant/50 text-secondary border border-outline-variant/30 px-6 py-2.5 rounded-lg font-label-md text-label-md hover:bg-surface-variant transition-all active:scale-95">
-              Reset
             </button>
           </div>
 
@@ -133,103 +208,105 @@ export default function WebhookPage() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-surface-container/30 border-b border-on-surface/[0.05]">
-                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider w-16">
-                      No
-                    </th>
-                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">
-                      Waktu
-                    </th>
-                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">
-                      Event Type
-                    </th>
-                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">
-                      Endpoint URL
-                    </th>
-                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider text-right">
-                      Aksi
-                    </th>
+                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider w-16">No</th>
+                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Waktu</th>
+                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Event Type</th>
+                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Device SN</th>
+                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-on-surface/[0.05]">
-                  {webhookLogs.map((row) => (
-                    <tr
-                      key={row.id}
-                      className="hover:bg-surface-bright/50 transition-colors group"
-                    >
-                      <td className="px-6 py-4 font-body-sm text-body-sm text-on-surface-variant">
-                        {row.id}
-                      </td>
-                      <td className="px-6 py-4 font-body-sm text-body-sm text-on-surface">
-                        {row.time}
-                      </td>
-                      <td className="px-6 py-4">
-                        <code className="bg-secondary-container/20 text-secondary font-mono text-[11px] px-2 py-1 rounded">
-                          {row.event}
-                        </code>
-                      </td>
-                      <td className="px-6 py-4 font-body-sm text-body-sm text-on-surface-variant truncate max-w-[200px]">
-                        {row.endpoint}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] font-bold ${statusStyles[row.statusType]}`}
-                        >
-                          <span
-                            className={`w-1.5 h-1.5 rounded-full ${statusDotColors[row.statusType]} mr-1.5`}
-                          ></span>
-                          {row.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <button className="p-2 hover:bg-primary/10 rounded-full transition-all text-secondary group-hover:text-primary">
-                          <span className="material-symbols-outlined text-md">
-                            visibility
-                          </span>
-                        </button>
-                        <button className="p-2 hover:bg-primary/10 rounded-full transition-all text-secondary hover:text-primary ml-1">
-                          <span className="material-symbols-outlined text-md">
-                            replay
-                          </span>
-                        </button>
+                  {loading ? (
+                    <tr>
+                      <td colSpan={5} className="py-12 px-6 text-center text-secondary">
+                        <span className="material-symbols-outlined animate-spin text-3xl mb-2">progress_activity</span>
+                        <p className="text-[14px]">Memuat data webhook...</p>
                       </td>
                     </tr>
-                  ))}
+                  ) : paginatedLogs.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-12 px-6 text-center text-secondary">
+                        <span className="material-symbols-outlined text-4xl mb-2 text-outline">inbox</span>
+                        <p className="text-[14px]">Tidak ada data webhook.</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedLogs.map((row, idx) => {
+                      const globalIdx = (safePage - 1) * PAGE_SIZE + idx;
+                      const d = new Date(row.created_at);
+                      return (
+                        <tr key={row.id} className="hover:bg-surface-bright/50 transition-colors group">
+                          <td className="px-6 py-4 font-body-sm text-body-sm text-on-surface-variant">{globalIdx + 1}</td>
+                          <td className="px-6 py-4 font-body-sm text-body-sm text-on-surface">
+                            {d.toLocaleDateString("id-ID")} {d.toLocaleTimeString("id-ID")}
+                          </td>
+                          <td className="px-6 py-4">
+                            <code className="bg-secondary-container/20 text-secondary font-mono text-[11px] px-2 py-1 rounded">
+                              {row.event_type || "-"}
+                            </code>
+                          </td>
+                          <td className="px-6 py-4 font-body-sm text-body-sm text-on-surface-variant">
+                            {row.device_sn || "-"}
+                          </td>
+                          <td className="px-6 py-4">
+                            <span
+                              className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] font-bold ${statusStyles[row.status] || statusStyles.received}`}
+                            >
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full ${statusDotColors[row.status] || statusDotColors.received} mr-1.5`}
+                              ></span>
+                              {row.status}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>
             <div className="px-6 py-4 bg-surface-container/10 border-t border-on-surface/[0.05] flex items-center justify-between">
               <p className="font-label-md text-label-md text-secondary">
-                Menampilkan 1-4 dari 280 riwayat
+                Menampilkan {filteredLogs.length > 0 ? `${(safePage - 1) * PAGE_SIZE + 1}-${Math.min(safePage * PAGE_SIZE, filteredLogs.length)}` : "0"} dari {filteredLogs.length} riwayat
               </p>
               <div className="flex items-center gap-2">
                 <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={safePage <= 1}
                   className="w-8 h-8 flex items-center justify-center rounded-lg border border-outline-variant/30 text-secondary hover:bg-surface-variant transition-all disabled:opacity-50"
-                  disabled
                 >
-                  <span className="material-symbols-outlined text-sm">
-                    chevron_left
-                  </span>
+                  <span className="material-symbols-outlined text-sm">chevron_left</span>
                 </button>
-                <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-on-primary font-label-md text-label-md">
-                  1
-                </button>
-                <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-outline-variant/30 text-secondary hover:bg-surface-variant transition-all font-label-md text-label-md">
-                  2
-                </button>
-                <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-outline-variant/30 text-secondary hover:bg-surface-variant transition-all font-label-md text-label-md">
-                  3
-                </button>
-                <span className="text-secondary px-1">...</span>
-                <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-outline-variant/30 text-secondary hover:bg-surface-variant transition-all font-label-md text-label-md">
-                  70
-                </button>
-                <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-outline-variant/30 text-secondary hover:bg-surface-variant transition-all">
-                  <span className="material-symbols-outlined text-sm">
-                    chevron_right
-                  </span>
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter((p) => p === 1 || p === totalPages || Math.abs(p - safePage) <= 2)
+                  .reduce<(number | "ellipsis")[]>((acc, p, idx, arr) => {
+                    if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push("ellipsis");
+                    acc.push(p);
+                    return acc;
+                  }, [])
+                  .map((item, idx) =>
+                    item === "ellipsis" ? (
+                      <span key={`e${idx}`} className="text-secondary px-1">...</span>
+                    ) : (
+                      <button
+                        key={item}
+                        onClick={() => setPage(item)}
+                        className={`w-8 h-8 flex items-center justify-center rounded-lg font-label-md text-label-md transition-all ${
+                          item === safePage
+                            ? "bg-primary text-on-primary"
+                            : "border border-outline-variant/30 text-secondary hover:bg-surface-variant"
+                        }`}
+                      >
+                        {item}
+                      </button>
+                    )
+                  )}
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={safePage >= totalPages}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg border border-outline-variant/30 text-secondary hover:bg-surface-variant transition-all disabled:opacity-50"
+                >
+                  <span className="material-symbols-outlined text-sm">chevron_right</span>
                 </button>
               </div>
             </div>
@@ -238,34 +315,26 @@ export default function WebhookPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-2">
             <div className="lg:col-span-8 glass-card rounded-xl p-6">
               <h3 className="font-title-md text-title-md text-primary mb-6 flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary">
-                  analytics
-                </span>
-                Tingkat Keberhasilan (24 Jam Terakhir)
+                <span className="material-symbols-outlined text-primary">analytics</span>
+                Ringkasan Webhook
               </h3>
-              <div className="relative h-48 w-full flex items-end gap-2 px-2">
-                <div className="flex-grow flex items-end justify-around h-full border-b border-outline-variant/20">
-                  {barData.map((bar, i) => (
-                    <div
-                      key={i}
-                      className={`w-full ${bar.className} rounded-t-sm relative group`}
-                      style={{ height: bar.height }}
-                    >
-                      {i === 0 && (
-                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-primary text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                          94%
-                        </div>
-                      )}
-                    </div>
-                  ))}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-surface-container-low p-4 rounded-lg text-center">
+                  <p className="text-[24px] font-bold text-primary">{stats.total}</p>
+                  <p className="text-[12px] text-secondary uppercase tracking-wider">Total</p>
                 </div>
-              </div>
-              <div className="flex justify-between mt-4 text-[10px] text-secondary font-label-md">
-                <span>00:00</span>
-                <span>06:00</span>
-                <span>12:00</span>
-                <span>18:00</span>
-                <span>23:59</span>
+                <div className="bg-blue-500/10 p-4 rounded-lg text-center">
+                  <p className="text-[24px] font-bold text-blue-600">{stats.received}</p>
+                  <p className="text-[12px] text-secondary uppercase tracking-wider">Received</p>
+                </div>
+                <div className="bg-green-500/10 p-4 rounded-lg text-center">
+                  <p className="text-[24px] font-bold text-green-600">{stats.processed}</p>
+                  <p className="text-[12px] text-secondary uppercase tracking-wider">Processed</p>
+                </div>
+                <div className="bg-error/10 p-4 rounded-lg text-center">
+                  <p className="text-[24px] font-bold text-error">{stats.failed}</p>
+                  <p className="text-[12px] text-secondary uppercase tracking-wider">Failed</p>
+                </div>
               </div>
             </div>
 
@@ -275,31 +344,27 @@ export default function WebhookPage() {
                   Status Kesehatan
                 </h3>
                 <div className="flex items-center gap-4 mb-6">
-                  <div className="w-16 h-16 flex items-center justify-center rounded-full border-4 border-green-500/20 text-green-600 font-bold text-lg">
-                    98%
+                  <div className={`w-16 h-16 flex items-center justify-center rounded-full border-4 ${stats.total > 0 && stats.failed === 0 ? "border-green-500/20 text-green-600" : stats.failed > stats.total * 0.1 ? "border-error/20 text-error" : "border-orange-500/20 text-orange-600"} font-bold text-lg`}>
+                    {stats.total > 0 ? Math.round(((stats.processed + stats.received) / stats.total) * 100) : 0}%
                   </div>
                   <div>
                     <p className="font-label-md text-label-md text-on-surface">
-                      Sangat Baik
+                      {stats.total > 0 && stats.failed === 0 ? "Sangat Baik" : stats.failed > stats.total * 0.1 ? "Perlu Perhatian" : "Cukup Baik"}
                     </p>
                     <p className="font-body-sm text-body-sm text-secondary">
-                      Rata-rata latensi 240ms
+                      {stats.processed} diproses, {stats.failed} gagal
                     </p>
                   </div>
                 </div>
               </div>
               <div className="space-y-3">
                 <div className="flex justify-between items-center bg-surface-container-low p-3 rounded-lg">
-                  <span className="font-body-sm text-body-sm text-on-surface">
-                    Total Dikirim
-                  </span>
-                  <span className="font-bold text-primary">12.482</span>
+                  <span className="font-body-sm text-body-sm text-on-surface">Total Diterima</span>
+                  <span className="font-bold text-primary">{stats.total}</span>
                 </div>
                 <div className="flex justify-between items-center bg-surface-container-low p-3 rounded-lg">
-                  <span className="font-body-sm text-body-sm text-on-surface">
-                    Gagal (4xx/5xx)
-                  </span>
-                  <span className="font-bold text-error">124</span>
+                  <span className="font-body-sm text-body-sm text-on-surface">Gagal</span>
+                  <span className="font-bold text-error">{stats.failed}</span>
                 </div>
               </div>
             </div>

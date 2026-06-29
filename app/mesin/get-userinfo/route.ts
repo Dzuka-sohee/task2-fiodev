@@ -2,18 +2,6 @@ import { NextResponse, NextRequest } from "next/server";
 import { callFingerspot } from "@/lib/fingerspot";
 import { createClient } from "@/lib/supabase/server";
 
-interface UserinfoItem {
-  pin: string;
-  name: string;
-  password: string;
-  card_no: string;
-  privilege: string;
-  enabled: string;
-  device_sn: string;
-  raw_payload: Record<string, unknown>;
-  synced_at: string;
-}
-
 export async function POST(request: NextRequest) {
   const body = await request.json();
   const { trans_id, pin } = body;
@@ -31,7 +19,10 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (reqError) {
-    return NextResponse.json({ error: reqError.message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: `Gagal insert request: ${reqError.message}` },
+      { status: 500 }
+    );
   }
 
   try {
@@ -39,39 +30,24 @@ export async function POST(request: NextRequest) {
       "https://developer.fingerspot.io/api/get_userinfo",
       {
         trans_id: trans_id ?? "1",
-        cloud_id: "",
         pin,
-      }
+      },
+      supabase
     );
 
-    if (result.success && Array.isArray(result.data)) {
-      const users: UserinfoItem[] = result.data.map(
-        (item: Record<string, unknown>) => ({
-          pin: String(item.pin ?? ""),
-          name: String(item.name ?? ""),
-          password: String(item.password ?? ""),
-          card_no: String(item.card_no ?? ""),
-          privilege: String(item.privilege ?? ""),
-          enabled: String(item.enabled ?? ""),
-          device_sn: String(item.device_sn ?? ""),
-          raw_payload: item,
-          synced_at: new Date().toISOString(),
-        })
-      );
-
-      await supabase.from("userinfos").upsert(users, {
-        onConflict: "pin",
-      });
-    }
-
     const finalStatus = result.success ? "success" : "failed";
-
     await supabase
       .from("api_requests")
       .update({ status: finalStatus, response: result.data })
       .eq("id", pendingRequest.id);
 
-    return NextResponse.json(result);
+    return NextResponse.json({
+      success: result.success,
+      message: result.success
+        ? "Command dikirim. Data user akan muncul beberapa saat."
+        : result.message,
+      requestId: pendingRequest.id,
+    });
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
@@ -81,6 +57,9 @@ export async function POST(request: NextRequest) {
       .update({ status: "failed", response: { error: errorMessage } })
       .eq("id", pendingRequest.id);
 
-    return NextResponse.json({ error: errorMessage }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: errorMessage },
+      { status: 500 }
+    );
   }
 }

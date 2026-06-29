@@ -180,7 +180,6 @@ Setiap route menerima `POST` request dari frontend, memanggil Fingerspot API via
 **File:** `app/mesin/get-attlog/route.ts`
 **Fungsi:** Mengambil data log absensi dari mesin untuk rentang tanggal tertentu.
 Simpan hasil ke tabel `attlogs`. Log request ke `api_requests`.
-**Letak trigger untuk send API:** ketika sudah memfilter tanggal maks 2 hari maka klik refresh untuk send API, nnti hasil otomatis masuk ke database dan tertampil di website.
 
 **Config — isi sebelum implementasi:**
 ```

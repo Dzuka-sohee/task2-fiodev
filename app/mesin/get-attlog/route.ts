@@ -2,16 +2,6 @@ import { NextResponse, NextRequest } from "next/server";
 import { callFingerspot } from "@/lib/fingerspot";
 import { createClient } from "@/lib/supabase/server";
 
-interface AttLog {
-  pin: string;
-  user_name: string;
-  scan_time: string;
-  verify_type: string;
-  status_code: string;
-  device_sn: string;
-  raw_payload: Record<string, unknown>;
-}
-
 export async function POST(request: NextRequest) {
   const body = await request.json();
   const { trans_id, start_date, end_date } = body;
@@ -29,7 +19,10 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (reqError) {
-    return NextResponse.json({ error: reqError.message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: `Gagal insert request: ${reqError.message}` },
+      { status: 500 }
+    );
   }
 
   try {
@@ -37,38 +30,25 @@ export async function POST(request: NextRequest) {
       "https://developer.fingerspot.io/api/get_attlog",
       {
         trans_id: trans_id ?? "1",
-        cloud_id: "",
         start_date,
         end_date,
-      }
+      },
+      supabase
     );
 
-    if (result.success && Array.isArray(result.data)) {
-      const logs: AttLog[] = result.data.map(
-        (item: Record<string, unknown>) => ({
-          pin: String(item.pin ?? ""),
-          user_name: String(item.user_name ?? ""),
-          scan_time: String(item.scan_time ?? ""),
-          verify_type: String(item.verify_type ?? ""),
-          status_code: String(item.status_code ?? ""),
-          device_sn: String(item.device_sn ?? ""),
-          raw_payload: item,
-        })
-      );
-
-      await supabase.from("attlogs").upsert(logs, {
-        onConflict: "pin,scan_time,device_sn",
-      });
-    }
-
     const finalStatus = result.success ? "success" : "failed";
-
     await supabase
       .from("api_requests")
       .update({ status: finalStatus, response: result.data })
       .eq("id", pendingRequest.id);
 
-    return NextResponse.json(result);
+    return NextResponse.json({
+      success: result.success,
+      message: result.success
+        ? "Command dikirim. Data absensi akan muncul beberapa saat."
+        : result.message,
+      requestId: pendingRequest.id,
+    });
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
@@ -78,6 +58,9 @@ export async function POST(request: NextRequest) {
       .update({ status: "failed", response: { error: errorMessage } })
       .eq("id", pendingRequest.id);
 
-    return NextResponse.json({ error: errorMessage }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: errorMessage },
+      { status: 500 }
+    );
   }
 }

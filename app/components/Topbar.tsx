@@ -6,7 +6,7 @@ interface TopbarProps {
 
 export default function Topbar({ title }: TopbarProps) {
   return (
-    <header className="sticky top-0 w-full z-40 bg-surface/85 backdrop-blur-xl border-b border-on-surface/[0.08] shadow-[0px_10px_30px_rgba(51,65,85,0.05)] flex justify-between items-center h-16 px-6 lg:px-10">
+    <header className="sticky top-0 w-full z-40 bg-white/30 backdrop-blur-[24px] border-b border-black/[0.06] shadow-[0_4px_32px_rgba(0,0,0,0.06)] flex justify-between items-center h-16 px-6 lg:px-10">
       <h2 className="text-[20px] leading-[28px] font-semibold text-primary">{title}</h2>
       <div className="flex items-center gap-4">
         <button className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant/50 transition-colors">

@@ -1,172 +1,269 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
 
-interface FingerspotWebhookPayload {
-  event: string;
-  device_sn?: string;
-  data: Record<string, unknown>;
-  timestamp?: string;
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
 
-async function verifySignature(
-  body: string,
-  signatureHeader: string | null,
-  secret: string
-): Promise<boolean> {
-  if (!signatureHeader) return false;
+  const url = new URL(req.url);
+  if (url.pathname.endsWith("/anti-pause") || url.searchParams.get("ping") === "1") {
+    console.log("Anti-pause ping received");
+    return json({ status: "alive", time: new Date().toISOString() });
+  }
 
-  const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    "raw",
-    encoder.encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"]
-  );
+  try {
+    const body = await req.json();
+    console.log("Webhook received:", JSON.stringify(body));
 
-  const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(body));
-  const expectedSig = Array.from(new Uint8Array(signature))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
 
-  const receivedSig = signatureHeader.replace("sha256=", "");
-  return expectedSig === receivedSig;
-}
+    const type: string = body.type;
+    const cloudId: string = body.cloud_id;
+    const data = body.data;
 
-async function handleEvent(
-  payload: FingerspotWebhookPayload,
-  supabase: ReturnType<typeof createClient>
-): Promise<{ message: string }> {
-  switch (payload.event) {
-    case "attlog": {
-      const { pin, user_name, scan_time, verify_type, status_code } = payload.data;
-      const { error } = await supabase.from("attlogs").insert({
-        pin: String(pin ?? ""),
-        user_name: String(user_name ?? ""),
-        scan_time: scan_time ?? new Date().toISOString(),
-        verify_type: Number(verify_type ?? 0),
-        status_code: Number(status_code ?? 0),
-        device_sn: payload.device_sn ?? "",
-        raw_payload: payload.data,
-      });
-      if (error) throw new Error(`DB error: ${error.message}`);
-      return { message: "Attendance log saved" };
+    if (!type) return json({ error: "Missing type" }, 400);
+    if (!cloudId) return json({ error: "Missing cloud_id" }, 400);
+
+    // ── GET USERID LIST (get_all_pin) ─────────────────────────
+    if (type === "get_userid_list") {
+      const pinArr: string[] = data?.pin_arr ?? [];
+      const total: number = data?.total ?? pinArr.length;
+
+      if (pinArr.length === 0) {
+        console.log("get_userid_list: no pins");
+        return json({ success: true });
+      }
+
+      const pinsToInsert = pinArr.map((pin: string) => ({
+        pin: pin.toString(),
+        device_sn: cloudId,
+        fetched_at: new Date().toISOString(),
+      }));
+
+      await supabase.from("pins").delete().eq("device_sn", cloudId);
+
+      const { error } = await supabase.from("pins").insert(pinsToInsert);
+
+      if (error) {
+        console.error("Error get_userid_list:", error);
+        return json({ error: error.message }, 500);
+      }
+
+      console.log(`get_userid_list: saved ${pinsToInsert.length} pins (total: ${total})`);
+      return json({ success: true });
     }
 
-    case "user.created":
-    case "user.updated": {
-      const { pin, name, privilege, password, card_no } = payload.data;
+    // ── ATTLOG (realtime) ──────────────────────────────────────
+    if (type === "attlog" || type === "realtime_attlog") {
+      if (!data?.pin || !data?.scan) {
+        console.log("attlog: skip - no pin/scan");
+        return json({ success: true });
+      }
+
+      const { error } = await supabase.from("attlogs").insert({
+        pin: data.pin.toString(),
+        user_name: data.name ?? "",
+        scan_time: data.scan,
+        verify_type: Number(data.verify ?? 0),
+        status_code: Number(data.status_scan ?? 0),
+        device_sn: cloudId,
+        raw_payload: data,
+      });
+
+      if (error) {
+        console.error("Error attlog:", error);
+        return json({ error: error.message }, 500);
+      }
+
+      console.log(`attlog: saved pin=${data.pin} time=${data.scan}`);
+      return json({ success: true });
+    }
+
+    // ── GET ATTLOG ─────────────────────────────────────────────
+    if (type === "get_attlog") {
+      const rows = Array.isArray(data) ? data : data ? [data] : [];
+
+      if (rows.length === 0) {
+        console.log("get_attlog: no data rows");
+        return json({ success: true });
+      }
+
+      const records = rows
+        .filter((r: Record<string, unknown>) => r.pin && r.scan)
+        .map((r: Record<string, unknown>) => ({
+          pin: String(r.pin ?? ""),
+          user_name: String(r.name ?? ""),
+          scan_time: r.scan,
+          verify_type: Number(r.verify ?? 0),
+          status_code: Number(r.status_scan ?? 0),
+          device_sn: cloudId,
+          raw_payload: r,
+        }));
+
+      if (records.length === 0) {
+        console.log("get_attlog: no valid records");
+        return json({ success: true });
+      }
+
+      const { error } = await supabase.from("attlogs").insert(records);
+
+      if (error) {
+        console.error("Error get_attlog:", error);
+        return json({ error: error.message }, 500);
+      }
+
+      console.log(`get_attlog: saved ${records.length} records`);
+      return json({ success: true });
+    }
+
+    // ── GET USERINFO ───────────────────────────────────────────
+    if (type === "get_userinfo") {
+      if (!data?.pin) {
+        console.log("get_userinfo: skip - no pin");
+        return json({ success: true });
+      }
+
       const { error } = await supabase.from("userinfos").upsert(
         {
-          pin: String(pin ?? ""),
-          name: String(name ?? ""),
-          privilege: Number(privilege ?? 1),
-          password: String(password ?? ""),
-          card_no: String(card_no ?? ""),
-          device_sn: payload.device_sn ?? "",
-          raw_payload: payload.data,
+          pin: data.pin.toString(),
+          name: data.name ?? "",
+          privilege: Number(data.privilege ?? 1),
+          password: data.password ?? "",
+          card_no: data.rfid ? String(data.rfid) : null,
+          device_sn: cloudId,
+          raw_payload: data,
           synced_at: new Date().toISOString(),
         },
         { onConflict: "pin" }
       );
-      if (error) throw new Error(`DB error: ${error.message}`);
-      return { message: `User ${payload.event} saved` };
-    }
 
-    case "user.deleted": {
-      const { pin } = payload.data;
-      const { error } = await supabase
-        .from("userinfos")
-        .delete()
-        .eq("pin", String(pin ?? ""));
-      if (error) throw new Error(`DB error: ${error.message}`);
-      return { message: "User deleted" };
-    }
-
-    case "device.offline":
-    case "device.online": {
-      console.log(`Device ${payload.device_sn} is ${payload.event.split(".")[1]}`);
-      return { message: `Device status: ${payload.event.split(".")[1]}` };
-    }
-
-    default:
-      console.warn(`Unhandled event type: ${payload.event}`);
-      return { message: `Event "${payload.event}" received but not handled` };
-  }
-}
-
-// ─── Main Handler ─────────────────────────────────────────────────────────────
-
-serve(async (req: Request) => {
-  if (req.method !== "POST") {
-    return new Response(JSON.stringify({ error: "Method not allowed" }), {
-      status: 405,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-
-  try {
-    const rawBody = await req.text();
-
-    const webhookSecret = Deno.env.get("WEBHOOK_SECRET") ?? "";
-    const signature = req.headers.get("x-webhook-signature");
-
-    if (webhookSecret) {
-      const isValid = await verifySignature(rawBody, signature, webhookSecret);
-      if (!isValid) {
-        return new Response(JSON.stringify({ error: "Invalid signature" }), {
-          status: 401,
-          headers: { "Content-Type": "application/json" },
-        });
+      if (error) {
+        console.error("Error get_userinfo:", error);
+        return json({ error: error.message }, 500);
       }
+
+      console.log(`get_userinfo: saved pin=${data.pin} name="${data.name}"`);
+      return json({ success: true });
     }
 
-    const payload: FingerspotWebhookPayload = JSON.parse(rawBody);
+    // ── SET USERINFO ───────────────────────────────────────────
+    if (type === "set_userinfo") {
+      const status = data?.status;
+      console.log(`set_userinfo: status=${status}`);
 
-    if (!payload.event) {
-      return new Response(JSON.stringify({ error: "Missing event field" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
+      await supabase.from("command_logs").insert({
+        command: "set_userinfo",
+        device_sn: cloudId,
+        status: status === 1 ? "success" : "failed",
+        notes: `Set userinfo status: ${status}`,
+        raw_payload: body,
       });
+
+      return json({ success: true });
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
+    // ── DELETE USERINFO ────────────────────────────────────────
+    if (type === "delete_userinfo") {
+      const status = Number(data?.status ?? 0);
+      const pin = data?.pin ?? body.pin;
 
-    // Log webhook ke DB (sesuai schema webhook_logs)
-    await supabase.from("webhook_logs").insert({
-      event_type: payload.event,
-      device_sn: payload.device_sn ?? "",
-      status: "received",
-      raw_payload: payload.data,
-    });
+      console.log(`delete_userinfo: status=${status} pin=${pin}`);
 
-    const result = await handleEvent(payload, supabase);
+      if (status === 1 && pin) {
+        const { error } = await supabase
+          .from("userinfos")
+          .delete()
+          .eq("pin", pin.toString());
 
-    // Update status ke processed
-    await supabase
-      .from("webhook_logs")
-      .update({ status: "processed" })
-      .eq("event_type", payload.event)
-      .eq("device_sn", payload.device_sn ?? "")
-      .order("created_at", { ascending: false })
-      .limit(1);
+        if (error) {
+          console.error("Error delete_userinfo:", error);
+          return json({ error: error.message }, 500);
+        }
 
-    return new Response(JSON.stringify({ success: true, ...result }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
-  } catch (err) {
-    console.error("Webhook error:", err);
-    return new Response(
-      JSON.stringify({ error: "Internal server error", detail: err.message }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
+        console.log(`delete_userinfo: deleted pin=${pin}`);
+      }
+
+      await supabase.from("command_logs").insert({
+        command: "delete_userinfo",
+        device_sn: cloudId,
+        status: status === 1 ? "success" : "failed",
+        notes: `Delete userinfo status: ${status} pin: ${pin}`,
+        raw_payload: body,
+      });
+
+      return json({ success: true });
+    }
+
+    // ── SET TIME ───────────────────────────────────────────────
+    if (type === "set_time") {
+      const status = data?.status;
+      console.log(`set_time: status=${status}`);
+
+      await supabase.from("command_logs").insert({
+        command: "set_time",
+        device_sn: cloudId,
+        status: status === 1 ? "success" : "failed",
+        notes: `Set time status: ${status}`,
+        raw_payload: body,
+      });
+
+      return json({ success: true });
+    }
+
+    // ── RESTART ────────────────────────────────────────────────
+    if (type === "restart" || type === "restart_device") {
+      const status = data?.status;
+      console.log(`restart: status=${status}`);
+
+      await supabase.from("command_logs").insert({
+        command: "restart",
+        device_sn: cloudId,
+        status: status === 1 ? "success" : "failed",
+        notes: `Restart status: ${status}`,
+        raw_payload: body,
+      });
+
+      return json({ success: true });
+    }
+
+    // ── REGISTER ONLINE ────────────────────────────────────────
+    if (type === "register_online" || type === "reg_online") {
+      const status = data?.status;
+      console.log(`register_online: status=${status}`);
+
+      await supabase.from("command_logs").insert({
+        command: "register_online",
+        device_sn: cloudId,
+        status: status === 1 ? "success" : "failed",
+        notes: `Register online status: ${status}`,
+        raw_payload: body,
+      });
+
+      return json({ success: true });
+    }
+
+    // ── UNKNOWN TYPE ───────────────────────────────────────────
+    console.log(`Unknown type: ${type} - ignored`);
+    return json({ success: true });
+
+  } catch (e) {
+    console.error("Unhandled error:", e);
+    return json({ error: e.message }, 500);
   }
 });

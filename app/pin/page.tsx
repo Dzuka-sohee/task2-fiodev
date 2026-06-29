@@ -1,13 +1,16 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 import Topbar from "../components/Topbar";
+import { createClient } from "@/lib/supabase/client";
 
-const pinData = [
-  { no: "01", pin: "882190", status: "AKTIF" as const, date: "24 Okt 2023, 14:20" },
-  { no: "02", pin: "459012", status: "AKTIF" as const, date: "22 Okt 2023, 09:12" },
-  { no: "03", pin: "102934", status: "NON-AKTIF" as const, date: "19 Okt 2023, 17:55" },
-  { no: "04", pin: "773410", status: "AKTIF" as const, date: "18 Okt 2023, 11:30" },
-  { no: "05", pin: "900122", status: "DITANGGUHKAN" as const, date: "15 Okt 2023, 08:45" },
-];
+interface PinItem {
+  id?: string;
+  pin: string;
+  device_sn: string;
+  fetched_at?: string;
+}
 
 const statusStyles: Record<string, { badge: string; dot: string }> = {
   AKTIF: {
@@ -25,6 +28,77 @@ const statusStyles: Record<string, { badge: string; dot: string }> = {
 };
 
 export default function PinPage() {
+  const [pins, setPins] = useState<PinItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
+  const [search, setSearch] = useState("");
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    loadPins();
+  }, []);
+
+  const loadPins = async () => {
+    setLoading(true);
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("pins")
+      .select("*")
+      .order("fetched_at", { ascending: false });
+
+    if (!error && data) {
+      setPins(data);
+    }
+    setLoading(false);
+  };
+
+  const handleAmbilSemuaPin = async () => {
+    setSyncing(true);
+    setMessage("");
+    try {
+      const res = await fetch("/mesin/get-all-pin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ trans_id: Date.now().toString() }),
+      });
+
+      const result = await res.json();
+
+      if (result.success) {
+        setMessage("Command dikirim ke mesin. Data akan muncul beberapa saat setelah diproses.");
+        // Poll database setiap 2 detik untuk cek data baru
+        let attempts = 0;
+        const poll = setInterval(async () => {
+          attempts++;
+          await loadPins();
+          const { data } = await createClient().from("pins").select("*");
+          if ((data && data.length > 0) || attempts >= 10) {
+            clearInterval(poll);
+            if (data && data.length > 0) {
+              setMessage(`Berhasil! ${data.length} PIN ditemukan di database.`);
+            } else {
+              setMessage("Timeout: Data belum muncul. Cek apakah Edge Function sudah ter-deploy.");
+            }
+            setTimeout(() => setMessage(""), 8000);
+          }
+        }, 2000);
+      } else {
+        const errorMsg = result.message || result.error || "Terjadi kesalahan tidak dikenal";
+        setMessage(`Gagal: ${errorMsg}`);
+      }
+    } catch (err) {
+      setMessage(`Error: ${err instanceof Error ? err.message : "Network error"}`);
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const filteredPins = pins.filter(
+    (p) =>
+      p.pin.includes(search) ||
+      p.device_sn.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
     <div className="min-h-screen">
       <Sidebar />
@@ -49,16 +123,33 @@ export default function PinPage() {
                   className="w-full pl-11 pr-4 py-2 bg-surface-container rounded-xl border-none ring-1 ring-on-surface/[0.08] focus:ring-primary/30 focus:bg-surface-bright transition-all text-[14px] leading-5"
                   placeholder="Cari PIN atau Pengguna..."
                   type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
                 />
               </div>
-              <button className="flex items-center gap-2 px-6 py-2 bg-primary text-white rounded-xl hover:bg-primary-container active:scale-95 transition-all shadow-md shadow-primary/10">
-                <span className="material-symbols-outlined text-lg">sync</span>
+              <button
+                onClick={handleAmbilSemuaPin}
+                disabled={syncing}
+                className="flex items-center gap-2 px-6 py-2 bg-primary text-white rounded-xl hover:bg-primary-container active:scale-95 transition-all shadow-md shadow-primary/10 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span className={`material-symbols-outlined text-lg ${syncing ? "animate-spin" : ""}`}>sync</span>
                 <span className="text-[12px] leading-4 font-semibold whitespace-nowrap tracking-[0.05em]">
-                  Ambil Semua PIN
+                  {syncing ? "Mengambil..." : "Ambil Semua PIN"}
                 </span>
               </button>
             </div>
           </div>
+
+          {/* Status Message */}
+          {message && (
+            <div className={`mb-4 px-4 py-3 rounded-xl text-[14px] font-medium ${
+              message.startsWith("Gagal") || message.startsWith("Error")
+                ? "bg-error/10 text-error"
+                : "bg-green-50 text-green-700"
+            }`}>
+              {message}
+            </div>
+          )}
 
           {/* Data Table */}
           <div className="glass-card rounded-2xl overflow-hidden mb-6">
@@ -73,10 +164,10 @@ export default function PinPage() {
                       PIN User
                     </th>
                     <th className="px-6 py-4 text-[12px] leading-4 font-semibold text-secondary uppercase tracking-wider">
-                      Status &amp; Integritas
+                      Device Serial Number
                     </th>
                     <th className="px-6 py-4 text-[12px] leading-4 font-semibold text-secondary uppercase tracking-wider">
-                      Terakhir Diperbarui
+                      Terakhir Diambil
                     </th>
                     <th className="px-6 py-4 text-[12px] leading-4 font-semibold text-secondary uppercase tracking-wider text-right">
                       Aksi
@@ -84,46 +175,67 @@ export default function PinPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-on-surface/[0.03]">
-                  {pinData.map((row) => (
-                    <tr key={row.no} className="hover:bg-surface-bright/50 transition-colors group">
-                      <td className="px-6 py-4 text-center text-[14px] leading-5 text-secondary">
-                        {row.no}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-primary-fixed-dim/20 flex items-center justify-center">
-                            <span className="material-symbols-outlined text-primary text-[18px]">key</span>
-                          </div>
-                          <span className="text-[16px] leading-6 font-bold text-primary tracking-[0.2em] font-mono">
-                            {row.pin}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex items-center px-2 py-1 rounded-full text-[11px] font-bold ${statusStyles[row.status].badge}`}
-                        >
-                          <span
-                            className={`w-1.5 h-1.5 rounded-full mr-2 ${statusStyles[row.status].dot}`}
-                          />
-                          {row.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-[14px] leading-5 text-secondary">
-                        {row.date}
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button className="w-8 h-8 rounded-lg border border-outline-variant flex items-center justify-center text-secondary hover:bg-primary hover:text-white transition-all active:scale-90">
-                            <span className="material-symbols-outlined text-[18px]">edit</span>
-                          </button>
-                          <button className="w-8 h-8 rounded-lg border border-outline-variant flex items-center justify-center text-secondary hover:bg-error hover:text-white transition-all active:scale-90">
-                            <span className="material-symbols-outlined text-[18px]">delete</span>
-                          </button>
-                        </div>
+                  {loading ? (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-12 text-center text-secondary">
+                        <span className="material-symbols-outlined animate-spin text-3xl mb-2">progress_activity</span>
+                        <p className="text-[14px]">Memuat data PIN...</p>
                       </td>
                     </tr>
-                  ))}
+                  ) : filteredPins.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-12 text-center text-secondary">
+                        <span className="material-symbols-outlined text-4xl mb-2 text-outline">key_off</span>
+                        <p className="text-[14px]">
+                          {pins.length === 0
+                            ? "Belum ada data PIN. Klik \"Ambil Semua PIN\" untuk sinkronisasi."
+                            : "PIN tidak ditemukan."}
+                        </p>
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredPins.map((row, idx) => (
+                      <tr key={row.id ?? row.pin} className="hover:bg-surface-bright/50 transition-colors group">
+                        <td className="px-6 py-4 text-center text-[14px] leading-5 text-secondary">
+                          {String(idx + 1).padStart(2, "0")}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-primary-fixed-dim/20 flex items-center justify-center">
+                              <span className="material-symbols-outlined text-primary text-[18px]">key</span>
+                            </div>
+                            <span className="text-[16px] leading-6 font-bold text-primary tracking-[0.2em] font-mono">
+                              {row.pin}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-[14px] leading-5 text-secondary font-mono">
+                          {row.device_sn || "-"}
+                        </td>
+                        <td className="px-6 py-4 text-[14px] leading-5 text-secondary">
+                          {row.fetched_at
+                            ? new Date(row.fetched_at).toLocaleString("id-ID", {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })
+                            : "-"}
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button className="w-8 h-8 rounded-lg border border-outline-variant flex items-center justify-center text-secondary hover:bg-primary hover:text-white transition-all active:scale-90">
+                              <span className="material-symbols-outlined text-[18px]">edit</span>
+                            </button>
+                            <button className="w-8 h-8 rounded-lg border border-outline-variant flex items-center justify-center text-secondary hover:bg-error hover:text-white transition-all active:scale-90">
+                              <span className="material-symbols-outlined text-[18px]">delete</span>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -131,7 +243,7 @@ export default function PinPage() {
             {/* Pagination */}
             <div className="px-6 py-4 flex items-center justify-between bg-surface-variant/10 border-t border-on-surface/[0.05]">
               <p className="text-secondary text-[12px] leading-4 font-semibold tracking-[0.05em]">
-                Menampilkan 5 dari 1,248 data PIN
+                Menampilkan {filteredPins.length} dari {pins.length} data PIN
               </p>
               <div className="flex items-center gap-2">
                 <button className="p-1 rounded-lg border border-outline-variant text-secondary hover:bg-surface-variant transition-colors disabled:opacity-50" disabled>
@@ -141,14 +253,8 @@ export default function PinPage() {
                   <span className="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-white text-[12px] leading-4 font-semibold">
                     1
                   </span>
-                  <span className="w-8 h-8 flex items-center justify-center rounded-lg text-secondary text-[12px] leading-4 font-semibold hover:bg-surface-variant cursor-pointer">
-                    2
-                  </span>
-                  <span className="w-8 h-8 flex items-center justify-center rounded-lg text-secondary text-[12px] leading-4 font-semibold hover:bg-surface-variant cursor-pointer">
-                    3
-                  </span>
                 </div>
-                <button className="p-1 rounded-lg border border-outline-variant text-secondary hover:bg-surface-variant transition-colors">
+                <button className="p-1 rounded-lg border border-outline-variant text-secondary hover:bg-surface-variant transition-colors disabled:opacity-50" disabled>
                   <span className="material-symbols-outlined">chevron_right</span>
                 </button>
               </div>
@@ -156,57 +262,36 @@ export default function PinPage() {
           </div>
 
           {/* Bento Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Tingkat Keamanan */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="glass-card p-6 rounded-2xl flex items-center gap-4">
               <div className="w-12 h-12 rounded-full bg-secondary-container flex items-center justify-center text-primary">
                 <span className="material-symbols-outlined text-[28px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                  security
+                  key
                 </span>
               </div>
               <div>
                 <p className="text-secondary text-[12px] leading-4 font-semibold uppercase tracking-[0.05em]">
-                  Tingkat Keamanan
+                  Total PIN
                 </p>
                 <h4 className="text-[24px] leading-tight font-bold text-primary">
-                  94.2% <span className="text-green-500 text-[14px] leading-5 font-normal">↑ 2%</span>
+                  {pins.length}
                 </h4>
               </div>
             </div>
 
-            {/* Perubahan PIN */}
             <div className="glass-card p-6 rounded-2xl flex items-center gap-4">
               <div className="w-12 h-12 rounded-full bg-primary-fixed-dim/20 flex items-center justify-center text-primary">
                 <span className="material-symbols-outlined text-[28px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                  history
+                  devices
                 </span>
               </div>
               <div>
                 <p className="text-secondary text-[12px] leading-4 font-semibold uppercase tracking-[0.05em]">
-                  Perubahan PIN
+                  Device Terdaftar
                 </p>
                 <h4 className="text-[24px] leading-tight font-bold text-primary">
-                  12 <span className="text-secondary text-[14px] leading-5 font-normal">Hari ini</span>
+                  {new Set(pins.map((p) => p.device_sn).filter(Boolean)).size}
                 </h4>
-              </div>
-            </div>
-
-            {/* Storage Health */}
-            <div className="glass-card p-6 rounded-2xl flex flex-col justify-between">
-              <div className="flex justify-between items-start">
-                <p className="text-secondary text-[12px] leading-4 font-semibold uppercase tracking-[0.05em]">
-                  Storage Health
-                </p>
-                <span className="material-symbols-outlined text-secondary text-sm">info</span>
-              </div>
-              <div className="mt-4">
-                <div className="w-full bg-surface-container rounded-full h-2 overflow-hidden">
-                  <div className="bg-primary h-full rounded-full" style={{ width: "65%" }} />
-                </div>
-                <div className="flex justify-between mt-2">
-                  <span className="text-[10px] text-secondary">6.5 GB Used</span>
-                  <span className="text-[10px] text-secondary">10 GB Max</span>
-                </div>
               </div>
             </div>
           </div>
