@@ -35,14 +35,16 @@ export default function PengaturanPage() {
     setSaveMessage("");
 
     const supabase = createClient();
-    const { error } = await supabase.from("settings").upsert(
-      [
-        { key: "cloud_id", value: cloudId },
-        { key: "api_key", value: apiKey },
-        { key: "webhook_secret", value: webhookSecret },
-      ],
-      { onConflict: "key" }
-    );
+
+    const keys = ["cloud_id", "api_key", "webhook_secret"];
+
+    await supabase.from("settings").delete().in("key", keys);
+
+    const { error } = await supabase.from("settings").insert([
+      { key: "cloud_id", value: cloudId },
+      { key: "api_key", value: apiKey },
+      { key: "webhook_secret", value: webhookSecret },
+    ]);
 
     setIsSubmitting(false);
     setSaveMessage(error ? `Gagal: ${error.message}` : "Berhasil disimpan");

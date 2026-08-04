@@ -95,6 +95,7 @@ export default function UserPage() {
   const [verifySending, setVerifySending] = useState(false);
 
   const [openMenuPin, setOpenMenuPin] = useState<string | null>(null);
+  const [menuPosition, setMenuPosition] = useState<{ top: number; right: number }>({ top: 0, right: 0 });
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -280,6 +281,7 @@ export default function UserPage() {
           : "Command edit user dikirim. Data akan diperbarui beberapa saat."
         );
         setTimeout(() => setMessage(""), 8000);
+        loadData();
       } else {
         setMessage(`Gagal: ${result.message}`);
         setTimeout(() => setMessage(""), 5000);
@@ -424,9 +426,9 @@ export default function UserPage() {
 
           {message && (
             <div className={`px-4 py-3 rounded-xl text-[14px] font-medium ${
-              message.includes("Gagal") || message.includes("gagal") || message.includes("Error")
+              message.startsWith("Gagal") || message.startsWith("Error") || message.startsWith("Gagal:")
                 ? "bg-error/10 text-error"
-                : "bg-green-50 text-green-700"
+                : "bg-amber-50 text-amber-700"
             }`}>
               {message}
             </div>
@@ -488,40 +490,42 @@ export default function UserPage() {
                               {user.enabled ? "Active" : "Inactive"}
                             </span>
                           </td>
-                          <td className="px-6 py-4 text-right">
+                           <td className="px-6 py-4 text-right">
                             <div className="flex justify-end" ref={openMenuPin === user.pin ? menuRef : undefined}>
                               <button
-                                onClick={() => setOpenMenuPin(openMenuPin === user.pin ? null : user.pin)}
+                                onClick={(e) => {
+                                  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                                  setMenuPosition({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+                                  setOpenMenuPin(openMenuPin === user.pin ? null : user.pin);
+                                }}
                                 className="w-8 h-8 rounded-lg flex items-center justify-center text-secondary hover:bg-surface-variant transition-colors"
                               >
                                 <span className="material-symbols-outlined text-[20px]">more_vert</span>
                               </button>
                               {openMenuPin === user.pin && (
-                                <div className="relative ml-1">
-                                  <div className="absolute right-0 top-0 mt-8 w-44 bg-white rounded-xl shadow-xl border border-on-surface/[0.08] z-50 py-1">
-                                    <button
-                                      onClick={() => handleOpenEditUser(user)}
-                                      className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] text-secondary hover:bg-surface-variant/50 transition-colors"
-                                    >
-                                      <span className="material-symbols-outlined text-[18px]">edit</span>
-                                      Edit User
-                                    </button>
-                                    <button
-                                      onClick={() => handleOpenDelete(user)}
-                                      className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] text-error hover:bg-error/5 transition-colors"
-                                    >
-                                      <span className="material-symbols-outlined text-[18px]">delete</span>
-                                      Hapus User
-                                    </button>
-                                    <div className="border-t border-on-surface/[0.05] my-1" />
-                                    <button
-                                      onClick={() => handleOpenVerify(user)}
-                                      className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] text-secondary hover:bg-surface-variant/50 transition-colors"
-                                    >
-                                      <span className="material-symbols-outlined text-[18px]">fingerprint</span>
-                                      Tambah Verifikasi
-                                    </button>
-                                  </div>
+                                <div className="fixed z-[9999] w-44 bg-white rounded-xl shadow-xl border border-on-surface/[0.08] py-1" style={{ top: menuPosition.top, right: menuPosition.right }}>
+                                  <button
+                                    onClick={() => handleOpenEditUser(user)}
+                                    className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] text-secondary hover:bg-surface-variant/50 transition-colors"
+                                  >
+                                    <span className="material-symbols-outlined text-[18px]">edit</span>
+                                    Edit User
+                                  </button>
+                                  <button
+                                    onClick={() => handleOpenDelete(user)}
+                                    className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] text-error hover:bg-error/5 transition-colors"
+                                  >
+                                    <span className="material-symbols-outlined text-[18px]">delete</span>
+                                    Hapus User
+                                  </button>
+                                  <div className="border-t border-on-surface/[0.05] my-1" />
+                                  <button
+                                    onClick={() => handleOpenVerify(user)}
+                                    className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] text-secondary hover:bg-surface-variant/50 transition-colors"
+                                  >
+                                    <span className="material-symbols-outlined text-[18px]">fingerprint</span>
+                                    Tambah Verifikasi
+                                  </button>
                                 </div>
                               )}
                             </div>

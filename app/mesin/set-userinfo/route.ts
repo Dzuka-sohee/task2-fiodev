@@ -64,6 +64,21 @@ export async function POST(request: NextRequest) {
       .update({ status: finalStatus, notes: result.message })
       .eq("id", pendingLog.id);
 
+    if (result.success) {
+      await supabase.from("userinfos").upsert(
+        {
+          pin: pin.toString(),
+          name: name ?? "",
+          privilege: Number(privilege ?? 1),
+          password: password ?? "",
+          card_no: rfid ? String(rfid) : null,
+          raw_payload: body,
+          synced_at: new Date().toISOString(),
+        },
+        { onConflict: "pin" }
+      );
+    }
+
     return NextResponse.json({
       success: result.success,
       message: result.success
