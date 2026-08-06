@@ -98,7 +98,7 @@ export default function ApiLogsPage() {
   );
 
   const handleExport = () => {
-    const headers = ["No", "Tanggal", "Waktu", "Command", "Device SN", "Status"];
+    const headers = ["No", "Tanggal", "Waktu", "Command", "Device SN", "Status", "Response"];
     const rows = filteredLogs.map((l, i) => {
       const d = new Date(l.created_at);
       return [
@@ -108,6 +108,11 @@ export default function ApiLogsPage() {
         l.command,
         l.device_sn || "-",
         l.status,
+        l.response
+          ? typeof l.response === "string"
+            ? l.response
+            : JSON.stringify(l.response)
+          : "-",
       ];
     });
 
@@ -226,19 +231,20 @@ export default function ApiLogsPage() {
                     <th className="px-6 py-4 text-[12px] font-semibold uppercase tracking-widest">Command</th>
                     <th className="px-6 py-4 text-[12px] font-semibold uppercase tracking-widest">Device SN</th>
                     <th className="px-6 py-4 text-[12px] font-semibold uppercase tracking-widest">Status</th>
+                    <th className="px-6 py-4 text-[12px] font-semibold uppercase tracking-widest">Response</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-outline-variant/10">
                   {loading ? (
                     <tr>
-                      <td colSpan={5} className="py-12 px-6 text-center text-secondary">
+                      <td colSpan={6} className="py-12 px-6 text-center text-secondary">
                         <span className="material-symbols-outlined animate-spin text-3xl mb-2">progress_activity</span>
                         <p className="text-[14px]">Memuat data...</p>
                       </td>
                     </tr>
                   ) : paginatedLogs.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="py-12 px-6 text-center text-secondary">
+                      <td colSpan={6} className="py-12 px-6 text-center text-secondary">
                         <span className="material-symbols-outlined text-4xl mb-2 text-outline">inbox</span>
                         <p className="text-[14px]">Tidak ada data API log.</p>
                       </td>
@@ -270,6 +276,17 @@ export default function ApiLogsPage() {
                           </td>
                           <td className="px-6 py-4">
                             <StatusBadge status={row.status} />
+                          </td>
+                          <td className="px-6 py-4">
+                            {row.response ? (
+                              <pre className="px-3 py-2 bg-surface-container-highest rounded-lg text-[11px] font-mono text-secondary max-w-[280px] overflow-x-auto whitespace-pre-wrap">
+                                {typeof row.response === "string"
+                                  ? row.response
+                                  : JSON.stringify(row.response, null, 2)}
+                              </pre>
+                            ) : (
+                              <span className="text-[13px] text-outline">-</span>
+                            )}
                           </td>
                         </tr>
                       );

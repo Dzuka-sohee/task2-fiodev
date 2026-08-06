@@ -40,6 +40,14 @@ serve(async (req) => {
     if (!type) return json({ error: "Missing type" }, 400);
     if (!cloudId) return json({ error: "Missing cloud_id" }, 400);
 
+    // ── LOG TO webhook_logs ────────────────────────────────────
+    await supabase.from("webhook_logs").insert({
+      event_type: type,
+      device_sn: cloudId,
+      status: "received",
+      raw_payload: body,
+    });
+
     // ── GET USERID LIST (get_all_pin) ─────────────────────────
     if (type === "get_userid_list") {
       const pinArr: string[] = data?.pin_arr ?? [];

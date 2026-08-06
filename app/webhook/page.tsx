@@ -37,6 +37,8 @@ export default function WebhookPage() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [page, setPage] = useState(1);
   const [stats, setStats] = useState({ total: 0, received: 0, processed: 0, failed: 0 });
+  const [selectedLog, setSelectedLog] = useState<WebhookLog | null>(null);
+  const [cloudId, setCloudId] = useState("");
 
   useEffect(() => {
     loadData();
@@ -46,19 +48,30 @@ export default function WebhookPage() {
     setLoading(true);
     const supabase = createClient();
 
-    let query = supabase
-      .from("webhook_logs")
-      .select("*", { count: "exact" })
-      .order("created_at", { ascending: false });
+    const [settingsRes, logsRes] = await Promise.all([
+      supabase.from("settings").select("key, value").eq("key", "cloud_id"),
+      (async () => {
+        let query = supabase
+          .from("webhook_logs")
+          .select("*", { count: "exact" })
+          .order("created_at", { ascending: false });
 
-    if (startDate) {
-      query = query.gte("created_at", `${startDate}T00:00:00`);
-    }
-    if (endDate) {
-      query = query.lte("created_at", `${endDate}T23:59:59`);
+        if (startDate) {
+          query = query.gte("created_at", `${startDate}T00:00:00`);
+        }
+        if (endDate) {
+          query = query.lte("created_at", `${endDate}T23:59:59`);
+        }
+
+        return query;
+      })(),
+    ]);
+
+    if (!settingsRes.error && settingsRes.data) {
+      setCloudId(settingsRes.data.find((s) => s.key === "cloud_id")?.value || "");
     }
 
-    const { data, error } = await query;
+    const { data, error } = await logsRes;
 
     if (!error && data) {
       setLogs(data);
@@ -85,16 +98,21 @@ export default function WebhookPage() {
   );
 
   const handleExport = () => {
-    const headers = ["No", "Tanggal", "Waktu", "Event Type", "Device SN", "Status"];
+    const headers = ["No", "Tanggal", "Waktu", "Cloud ID", "Jenis API", "Status", "Webhook Message"];
     const rows = filteredLogs.map((l, i) => {
       const d = new Date(l.created_at);
       return [
         i + 1,
         d.toLocaleDateString("id-ID"),
         d.toLocaleTimeString("id-ID"),
+        cloudId || "-",
         l.event_type || "-",
-        l.device_sn || "-",
         l.status,
+        l.raw_payload
+          ? typeof l.raw_payload === "string"
+            ? l.raw_payload
+            : JSON.stringify(l.raw_payload)
+          : "-",
       ];
     });
 
@@ -106,6 +124,16 @@ export default function WebhookPage() {
     a.download = `webhook-logs-${new Date().toISOString().split("T")[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const formatWebhookMessage = (payload: any): string => {
+    if (!payload) return "-";
+    const data = typeof payload === "string" ? JSON.parse(payload) : payload;
+    const type = data.type || "unknown";
+    const cloudId = data.cloud_id || "";
+    const transId = data.trans_id || "";
+    const dataStr = data.data ? JSON.stringify(data.data) : "{}";
+    return `Webhook received: {"type":"${type}","cloud_id":"${cloudId}","trans_id":${transId},"data":${dataStr}}`;
   };
 
   return (
@@ -210,9 +238,9 @@ export default function WebhookPage() {
                   <tr className="bg-surface-container/30 border-b border-on-surface/[0.05]">
                     <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider w-16">No</th>
                     <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Waktu</th>
-                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Event Type</th>
-                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Device SN</th>
-                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Cloud ID</th>
+                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Jenis API</th>
+                    <th className="px-6 py-4 font-label-md text-label-md text-secondary uppercase tracking-wider">Webhook Message</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-on-surface/[0.05]">
@@ -238,25 +266,31 @@ export default function WebhookPage() {
                         <tr key={row.id} className="hover:bg-surface-bright/50 transition-colors group">
                           <td className="px-6 py-4 font-body-sm text-body-sm text-on-surface-variant">{globalIdx + 1}</td>
                           <td className="px-6 py-4 font-body-sm text-body-sm text-on-surface">
-                            {d.toLocaleDateString("id-ID")} {d.toLocaleTimeString("id-ID")}
+                            <div className="flex flex-col">
+                              <span className="text-[14px] font-bold text-primary">
+                                {d.toLocaleDateString("id-ID")}
+                              </span>
+                              <span className="text-[12px] text-secondary">
+                                {d.toLocaleTimeString("id-ID")}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 font-body-sm text-body-sm text-on-surface-variant">
+                            {cloudId || "-"}
                           </td>
                           <td className="px-6 py-4">
                             <code className="bg-secondary-container/20 text-secondary font-mono text-[11px] px-2 py-1 rounded">
                               {row.event_type || "-"}
                             </code>
                           </td>
-                          <td className="px-6 py-4 font-body-sm text-body-sm text-on-surface-variant">
-                            {row.device_sn || "-"}
-                          </td>
                           <td className="px-6 py-4">
-                            <span
-                              className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] font-bold ${statusStyles[row.status] || statusStyles.received}`}
+                            <button
+                              onClick={() => setSelectedLog(row)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-all active:scale-95 text-[12px] font-semibold"
                             >
-                              <span
-                                className={`w-1.5 h-1.5 rounded-full ${statusDotColors[row.status] || statusDotColors.received} mr-1.5`}
-                              ></span>
-                              {row.status}
-                            </span>
+                              <span className="material-symbols-outlined text-[16px]">visibility</span>
+                              Lihat
+                            </button>
                           </td>
                         </tr>
                       );
@@ -371,6 +405,67 @@ export default function WebhookPage() {
           </div>
         </div>
       </main>
+
+      {/* Modal Webhook Detail */}
+      {selectedLog && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+          onClick={() => setSelectedLog(null)}
+        >
+          <div
+            className="bg-surface rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-6 py-4 border-b border-outline-variant/20">
+              <h3 className="font-title-md text-title-md text-primary">Webhook Received</h3>
+              <button
+                onClick={() => setSelectedLog(null)}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container transition-all"
+              >
+                <span className="material-symbols-outlined text-[20px]">close</span>
+              </button>
+            </div>
+            <div className="px-6 py-4 overflow-y-auto flex-1">
+              <div className="space-y-3 mb-6">
+                <div className="flex justify-between items-center bg-surface-container-low p-3 rounded-lg">
+                  <span className="text-[13px] text-secondary font-semibold">Timestamp</span>
+                  <span className="text-[13px] font-bold text-primary">
+                    {new Date(selectedLog.created_at).toLocaleDateString("id-ID")}{" "}
+                    {new Date(selectedLog.created_at).toLocaleTimeString("id-ID")}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center bg-surface-container-low p-3 rounded-lg">
+                  <span className="text-[13px] text-secondary font-semibold">Cloud ID</span>
+                  <span className="text-[13px] font-bold text-primary">{cloudId || "-"}</span>
+                </div>
+                <div className="flex justify-between items-center bg-surface-container-low p-3 rounded-lg">
+                  <span className="text-[13px] text-secondary font-semibold">Jenis API</span>
+                  <code className="text-[12px] font-mono bg-secondary-container/20 text-secondary px-2 py-1 rounded">
+                    {selectedLog.event_type || "-"}
+                  </code>
+                </div>
+                <div className="flex justify-between items-center bg-surface-container-low p-3 rounded-lg">
+                  <span className="text-[13px] text-secondary font-semibold">Status</span>
+                  <span
+                    className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] font-bold ${statusStyles[selectedLog.status] || statusStyles.received}`}
+                  >
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full ${statusDotColors[selectedLog.status] || statusDotColors.received} mr-1.5`}
+                    ></span>
+                    {selectedLog.status}
+                  </span>
+                </div>
+              </div>
+              <div>
+                <p className="text-[13px] text-secondary font-semibold mb-2 uppercase tracking-wider">Webhook Message</p>
+                <pre className="bg-surface-container-highest rounded-xl p-4 text-[12px] font-mono text-on-surface overflow-x-auto whitespace-pre-wrap max-h-[300px] overflow-y-auto border border-outline-variant/20">
+                  {formatWebhookMessage(selectedLog.raw_payload)}
+                </pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
