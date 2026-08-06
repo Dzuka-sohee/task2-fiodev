@@ -8,7 +8,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Fingerspot Attendance Dashboard",
+  title: "Tops Reg Nif",
   description: "Attendance Integration System Dashboard",
 };
 

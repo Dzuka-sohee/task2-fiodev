@@ -22,7 +22,7 @@ export default function Sidebar() {
       <div className="flex items-center px-6 mb-10 overflow-hidden whitespace-nowrap">
         <span className="material-symbols-outlined text-primary text-3xl mr-4" style={{ fontVariationSettings: "'FILL' 1" }}>fingerprint</span>
         <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <span className="text-[24px] leading-[32px] font-bold text-primary">Fingerspot</span>
+          <span className="text-[24px] leading-[32px] font-bold text-primary">Tops Reg Nif</span>
           <span className="text-[10px] uppercase tracking-widest text-secondary font-bold">Attendance System</span>
         </div>
       </div>
