@@ -58,7 +58,8 @@ export async function POST(request: Request) {
         role: user.role,
       },
     });
-  } catch {
+  } catch (error) {
+    console.error("[LOGIN ERROR]", error);
     return NextResponse.json(
       { error: "Terjadi kesalahan server" },
       { status: 500 }
