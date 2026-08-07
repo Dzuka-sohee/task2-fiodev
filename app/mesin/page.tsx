@@ -66,15 +66,13 @@ export default function MesinPage() {
     const supabase = createClient();
 
     const [settingsRes, historyRes] = await Promise.all([
-      supabase.from("settings").select("key, value").in("key", ["cloud_id", "device_timezone"]),
+      supabase.from("settings").select("cloud_id, device_timezone").limit(1).single(),
       supabase.from("command_logs").select("*").order("created_at", { ascending: false }).limit(20),
     ]);
 
     if (!settingsRes.error && settingsRes.data) {
-      const cid = settingsRes.data.find((s) => s.key === "cloud_id")?.value;
-      const tz = settingsRes.data.find((s) => s.key === "device_timezone")?.value;
-      if (cid) setCloudId(cid);
-      if (tz) setTimezone(tz);
+      if (settingsRes.data.cloud_id) setCloudId(settingsRes.data.cloud_id);
+      if (settingsRes.data.device_timezone) setTimezone(settingsRes.data.device_timezone);
     }
     if (!historyRes.error && historyRes.data) {
       setHistory(historyRes.data);
@@ -86,10 +84,7 @@ export default function MesinPage() {
     setMessage("");
     try {
       const supabase = createClient();
-      await supabase.from("settings").upsert(
-        { key: "device_timezone", value: timezone },
-        { onConflict: "key" }
-      );
+      await supabase.from("settings").update({ device_timezone: timezone }).eq("id", (await supabase.from("settings").select("id").limit(1).single()).data?.id);
 
       const res = await fetch("/mesin/set-time", {
         method: "POST",

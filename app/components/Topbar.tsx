@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -12,8 +13,14 @@ export default function Topbar({ title }: TopbarProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [userName, setUserName] = useState("Admin");
   const [userRole, setUserRole] = useState("User");
+  const [mounted, setMounted] = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -29,7 +36,12 @@ export default function Topbar({ title }: TopbarProps) {
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node) &&
+        btnRef.current &&
+        !btnRef.current.contains(e.target as Node)
+      ) {
         setDropdownOpen(false);
       }
     }
@@ -51,6 +63,53 @@ export default function Topbar({ title }: TopbarProps) {
       .slice(0, 2);
   };
 
+  const getDropdownPosition = () => {
+    if (!btnRef.current) return { top: 64, right: 24 };
+    const rect = btnRef.current.getBoundingClientRect();
+    return {
+      top: rect.bottom + 8,
+      right: window.innerWidth - rect.right,
+    };
+  };
+
+  const dropdownContent = dropdownOpen && mounted ? (
+    <div
+      ref={dropdownRef}
+      className="fixed w-56 rounded-xl overflow-hidden z-[9999]"
+      style={{
+        top: getDropdownPosition().top,
+        right: getDropdownPosition().right,
+        background: "rgba(255, 255, 255, 0.55)",
+        backdropFilter: "blur(30px) saturate(180%)",
+        WebkitBackdropFilter: "blur(30px) saturate(180%)",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)",
+        border: "1px solid rgba(255,255,255,0.6)",
+      }}
+    >
+      <div className="p-4 border-b border-black/[0.06]">
+        <p className="text-sm font-bold text-primary">{userName}</p>
+        <p className="text-xs text-secondary">{userRole}</p>
+      </div>
+      <div className="py-2">
+        <Link
+          href="/dashboard/profile"
+          onClick={() => setDropdownOpen(false)}
+          className="flex items-center gap-3 px-4 py-2.5 text-sm text-secondary hover:bg-white/30 hover:text-primary transition-colors"
+        >
+          <span className="material-symbols-outlined text-lg">person</span>
+          <span>Edit Profile</span>
+        </Link>
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-error hover:bg-error/5 transition-colors"
+        >
+          <span className="material-symbols-outlined text-lg">logout</span>
+          <span>Logout</span>
+        </button>
+      </div>
+    </div>
+  ) : null;
+
   return (
     <header className="sticky top-0 w-full z-40 bg-white/30 backdrop-blur-[24px] border-b border-black/[0.06] shadow-[0_4px_32px_rgba(0,0,0,0.06)] flex justify-between items-center h-16 px-6 lg:px-10">
       <h2 className="text-[20px] leading-[28px] font-semibold text-primary">{title}</h2>
@@ -59,8 +118,9 @@ export default function Topbar({ title }: TopbarProps) {
           <span className="material-symbols-outlined text-secondary">notifications</span>
         </button>
         <div className="h-8 w-[1px] bg-outline-variant/30"></div>
-        <div className="relative" ref={dropdownRef}>
+        <div className="relative">
           <button
+            ref={btnRef}
             onClick={() => setDropdownOpen(!dropdownOpen)}
             className="flex items-center gap-2 cursor-pointer group"
           >
@@ -72,35 +132,9 @@ export default function Topbar({ title }: TopbarProps) {
               <span className="text-sm font-bold text-primary">{getInitials(userName)}</span>
             </div>
           </button>
-
-          {/* Dropdown Menu */}
-          {dropdownOpen && (
-            <div className="absolute right-0 top-full mt-2 w-56 glass-card rounded-xl shadow-lg shadow-primary/10 border border-outline-variant/20 overflow-hidden z-50">
-              <div className="p-4 border-b border-outline-variant/20">
-                <p className="text-sm font-bold text-primary">{userName}</p>
-                <p className="text-xs text-secondary">{userRole}</p>
-              </div>
-              <div className="py-2">
-                <Link
-                  href="/dashboard/profile"
-                  onClick={() => setDropdownOpen(false)}
-                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-secondary hover:bg-surface-variant/30 hover:text-primary transition-colors"
-                >
-                  <span className="material-symbols-outlined text-lg">person</span>
-                  <span>Edit Profile</span>
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-error hover:bg-error/5 transition-colors"
-                >
-                  <span className="material-symbols-outlined text-lg">logout</span>
-                  <span>Logout</span>
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       </div>
+      {mounted && createPortal(dropdownContent, document.body)}
     </header>
   );
 }

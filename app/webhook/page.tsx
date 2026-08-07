@@ -49,7 +49,7 @@ export default function WebhookPage() {
     const supabase = createClient();
 
     const [settingsRes, logsRes] = await Promise.all([
-      supabase.from("settings").select("key, value").eq("key", "cloud_id"),
+      supabase.from("settings").select("cloud_id").limit(1).single(),
       (async () => {
         let query = supabase
           .from("webhook_logs")
@@ -68,7 +68,7 @@ export default function WebhookPage() {
     ]);
 
     if (!settingsRes.error && settingsRes.data) {
-      setCloudId(settingsRes.data.find((s) => s.key === "cloud_id")?.value || "");
+      setCloudId(settingsRes.data.cloud_id || "");
     }
 
     const { data, error } = await logsRes;

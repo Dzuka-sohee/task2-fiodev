@@ -19,7 +19,9 @@ export async function callFingerspot(
   console.log('[callFingerspot] Reading settings from DB...')
   const { data: settings, error: settingsError } = await supabase
     .from('settings')
-    .select('key, value')
+    .select('cloud_id, api_key')
+    .limit(1)
+    .single()
 
   if (settingsError) {
     console.error('[callFingerspot] Settings error:', settingsError.message)
@@ -31,13 +33,10 @@ export async function callFingerspot(
     return { success: false, data: null, message: 'Failed to read settings: no data returned' }
   }
 
-  console.log('[callFingerspot] Settings loaded:', settings.map(s => `${s.key}=${s.value ? '***' : '(empty)'}`).join(', '))
+  console.log('[callFingerspot] Settings loaded')
 
-  const getSetting = (key: string) =>
-    settings.find((s) => s.key === key)?.value ?? ''
-
-  const apiKey = getSetting('api_key')
-  const cloudId = getSetting('cloud_id')
+  const apiKey = settings.api_key || ''
+  const cloudId = settings.cloud_id || ''
 
   if (!apiKey) {
     console.error('[callFingerspot] API Key is empty!')

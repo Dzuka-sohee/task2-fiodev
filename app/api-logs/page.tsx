@@ -5,7 +5,7 @@ import Sidebar from "../components/Sidebar";
 import Topbar from "../components/Topbar";
 import { createClient } from "@/lib/supabase/client";
 
-interface ApiLog {
+interface LogEntry {
   id: string;
   command: string;
   device_sn: string | null;
@@ -13,7 +13,7 @@ interface ApiLog {
   raw_payload: any;
   response: any;
   created_at: string;
-  updated_at: string;
+  source: "api" | "webhook";
 }
 
 const PAGE_SIZE = 20;
@@ -21,12 +21,16 @@ const PAGE_SIZE = 20;
 function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
     success: "bg-green-500/10 text-green-600",
+    received: "bg-blue-500/10 text-blue-600",
+    processed: "bg-green-500/10 text-green-600",
     failed: "bg-error/10 text-error",
     pending: "bg-orange-500/10 text-orange-600",
   };
 
   const dotStyles: Record<string, string> = {
     success: "bg-green-500",
+    received: "bg-blue-500",
+    processed: "bg-green-500",
     failed: "bg-error",
     pending: "bg-orange-500 animate-pulse",
   };
@@ -42,7 +46,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export default function ApiLogsPage() {
-  const [logs, setLogs] = useState<ApiLog[]>([]);
+  const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState(new Date().toISOString().split("T")[0]);
@@ -59,28 +63,60 @@ export default function ApiLogsPage() {
     setLoading(true);
     const supabase = createClient();
 
-    let query = supabase
+    let apiQuery = supabase
       .from("api_requests")
-      .select("*", { count: "exact" })
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    let webhookQuery = supabase
+      .from("webhook_logs")
+      .select("*")
       .order("created_at", { ascending: false });
 
     if (startDate) {
-      query = query.gte("created_at", `${startDate}T00:00:00`);
+      apiQuery = apiQuery.gte("created_at", `${startDate}T00:00:00`);
+      webhookQuery = webhookQuery.gte("created_at", `${startDate}T00:00:00`);
     }
     if (endDate) {
-      query = query.lte("created_at", `${endDate}T23:59:59`);
+      apiQuery = apiQuery.lte("created_at", `${endDate}T23:59:59`);
+      webhookQuery = webhookQuery.lte("created_at", `${endDate}T23:59:59`);
     }
 
-    const { data, error, count } = await query;
+    const [apiResult, webhookResult] = await Promise.all([apiQuery, webhookQuery]);
 
-    if (!error && data) {
-      setLogs(data);
+    const apiLogs: LogEntry[] = (apiResult.data ?? []).map((r) => ({
+      id: r.id,
+      command: r.command,
+      device_sn: r.device_sn,
+      status: r.status,
+      raw_payload: r.raw_payload,
+      response: r.response,
+      created_at: r.created_at,
+      source: "api",
+    }));
 
-      const success = data.filter((l) => l.status === "success").length;
-      const failed = data.filter((l) => l.status === "failed").length;
-      const pending = data.filter((l) => l.status === "pending").length;
-      setStats({ total: data.length, success, failed, pending });
-    }
+    const webhookLogs: LogEntry[] = (webhookResult.data ?? []).map((r) => ({
+      id: r.id,
+      command: r.event_type || "unknown",
+      device_sn: r.device_sn,
+      status: r.status,
+      raw_payload: r.raw_payload,
+      response: null,
+      created_at: r.created_at,
+      source: "webhook",
+    }));
+
+    const merged = [...apiLogs, ...webhookLogs].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+
+    setLogs(merged);
+
+    const success = merged.filter((l) => l.status === "success" || l.status === "processed").length;
+    const failed = merged.filter((l) => l.status === "failed").length;
+    const pending = merged.filter((l) => l.status === "pending" || l.status === "received").length;
+    setStats({ total: merged.length, success, failed, pending });
+
     setLoading(false);
   };
 
@@ -98,9 +134,17 @@ export default function ApiLogsPage() {
   );
 
   const handleExport = () => {
-    const headers = ["No", "Tanggal", "Waktu", "Command", "Device SN", "Status", "Response"];
+    const headers = ["No", "Tanggal", "Waktu", "Command", "Device SN", "Status", "Payload/Response"];
     const rows = filteredLogs.map((l, i) => {
       const d = new Date(l.created_at);
+      const displayData = l.source === "webhook"
+        ? l.raw_payload
+        : (l.response || l.raw_payload);
+      const dataStr = displayData
+        ? typeof displayData === "string"
+          ? displayData
+          : JSON.stringify(displayData)
+        : "-";
       return [
         i + 1,
         d.toLocaleDateString("id-ID"),
@@ -108,15 +152,11 @@ export default function ApiLogsPage() {
         l.command,
         l.device_sn || "-",
         l.status,
-        l.response
-          ? typeof l.response === "string"
-            ? l.response
-            : JSON.stringify(l.response)
-          : "-",
+        dataStr,
       ];
     });
 
-    const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
+    const csv = [headers, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -139,7 +179,7 @@ export default function ApiLogsPage() {
                 Riwayat Request API
               </h1>
               <p className="text-[16px] leading-6 text-secondary">
-                Monitoring system logs and real-time API transactions.
+                Monitoring system logs, API requests, dan webhook data.
               </p>
             </div>
             <button
@@ -193,6 +233,9 @@ export default function ApiLogsPage() {
                 <option value="set_time">Set Time</option>
                 <option value="restart">Restart</option>
                 <option value="register_online">Register Online</option>
+                <option value="attlog">Attlog (Webhook)</option>
+                <option value="get_userid_list">Get User ID List</option>
+                <option value="realtime_attlog">Realtime Attendance</option>
               </select>
             </div>
             <div className="flex flex-col gap-1 flex-1 min-w-[150px]">
@@ -207,6 +250,8 @@ export default function ApiLogsPage() {
                 <option value="all">All Status</option>
                 <option value="success">Success</option>
                 <option value="pending">Pending</option>
+                <option value="received">Received</option>
+                <option value="processed">Processed</option>
                 <option value="failed">Failed</option>
               </select>
             </div>
@@ -231,7 +276,7 @@ export default function ApiLogsPage() {
                     <th className="px-6 py-4 text-[12px] font-semibold uppercase tracking-widest">Command</th>
                     <th className="px-6 py-4 text-[12px] font-semibold uppercase tracking-widest">Device SN</th>
                     <th className="px-6 py-4 text-[12px] font-semibold uppercase tracking-widest">Status</th>
-                    <th className="px-6 py-4 text-[12px] font-semibold uppercase tracking-widest">Response</th>
+                    <th className="px-6 py-4 text-[12px] font-semibold uppercase tracking-widest">Payload / Response</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-outline-variant/10">
@@ -253,8 +298,16 @@ export default function ApiLogsPage() {
                     paginatedLogs.map((row, idx) => {
                       const globalIdx = (safePage - 1) * PAGE_SIZE + idx;
                       const d = new Date(row.created_at);
+                      const displayData = row.source === "webhook"
+                        ? row.raw_payload
+                        : (row.response || row.raw_payload);
+                      const formattedJson = displayData
+                        ? typeof displayData === "string"
+                          ? displayData
+                          : JSON.stringify(displayData, null, 2)
+                        : null;
                       return (
-                        <tr key={row.id} className="hover:bg-primary/[0.02] transition-colors">
+                        <tr key={`${row.source}-${row.id}`} className="hover:bg-primary/[0.02] transition-colors">
                           <td className="px-6 py-4 text-[14px]">{globalIdx + 1}</td>
                           <td className="px-6 py-4">
                             <div className="flex flex-col">
@@ -278,11 +331,9 @@ export default function ApiLogsPage() {
                             <StatusBadge status={row.status} />
                           </td>
                           <td className="px-6 py-4">
-                            {row.response ? (
+                            {formattedJson ? (
                               <pre className="px-3 py-2 bg-surface-container-highest rounded-lg text-[11px] font-mono text-secondary max-w-[280px] overflow-x-auto whitespace-pre-wrap">
-                                {typeof row.response === "string"
-                                  ? row.response
-                                  : JSON.stringify(row.response, null, 2)}
+                                {formattedJson}
                               </pre>
                             ) : (
                               <span className="text-[13px] text-outline">-</span>
@@ -369,7 +420,7 @@ export default function ApiLogsPage() {
                 <span className="material-symbols-outlined text-orange-600">pending</span>
               </div>
               <div>
-                <h4 className="text-[12px] font-semibold text-secondary uppercase tracking-widest">Pending Requests</h4>
+                <h4 className="text-[12px] font-semibold text-secondary uppercase tracking-widest">Pending / Received</h4>
                 <p className="text-[20px] font-bold text-primary">{stats.pending}</p>
               </div>
             </div>

@@ -14,6 +14,35 @@ export function formatDate(date: Date | string): string {
   })
 }
 
+export function formatScanTime(isoString: string): string {
+  const match = isoString.match(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/)
+  if (!match) return isoString
+  const [, year, month, day, hour, min, sec] = match
+  const d = new Date(Number(year), Number(month) - 1, Number(day), Number(hour), Number(min), Number(sec))
+  return d.toLocaleString('id-ID', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  })
+}
+
+export function formatScanTimeShort(isoString: string): string {
+  const match = isoString.match(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/)
+  if (!match) return isoString
+  const [, year, month, day, hour, min] = match
+  const d = new Date(Number(year), Number(month) - 1, Number(day), Number(hour), Number(min))
+  return d.toLocaleString('id-ID', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
 export function formatDateTime(date: Date | string): string {
   const d = typeof date === 'string' ? new Date(date) : date
   return d.toLocaleString('id-ID', {
@@ -28,12 +57,12 @@ export function formatDateTime(date: Date | string): string {
 
 export function formatVerifyType(code: number): string {
   const map: Record<number, string> = {
-    0: 'Finger',
-    1: 'PIN',
-    2: 'Card',
-    12: 'Face',
-    13: 'Vein',
-    15: 'Face',
+    1: 'Finger',
+    2: 'Password',
+    3: 'Card',
+    4: 'Face',
+    6: 'Vein',
+    7: 'QR',
   }
   return map[code] ?? `Type ${code}`
 }

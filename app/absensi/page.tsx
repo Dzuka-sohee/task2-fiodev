@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 import Topbar from "../components/Topbar";
 import { createClient } from "@/lib/supabase/client";
-import { formatVerifyType } from "@/lib/utils";
+import { formatVerifyType, formatScanTime } from "@/lib/utils";
 
 interface AttLog {
   id: string;
@@ -20,12 +20,12 @@ interface AttLog {
 const PAGE_SIZE = 20;
 
 const verifyIcons: Record<number, string> = {
-  0: "fingerprint",
-  1: "pin",
-  2: "credit_card",
-  12: "face",
-  13: "visibility",
-  15: "face",
+  1: "fingerprint",
+  2: "pin",
+  3: "card",
+  4: "face",
+  6: "visibility",
+  7: "qr_code",
 };
 
 function getStatusLabel(code: number | null): string {
@@ -59,6 +59,8 @@ function getInitials(name: string | null, pin: string): string {
 export default function AbsensiPage() {
   const [logs, setLogs] = useState<AttLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetching, setFetching] = useState(false);
+  const [fetchMessage, setFetchMessage] = useState("");
   const [startDate, setStartDate] = useState("");
   const endDateDefault = new Date().toISOString().split("T")[0];
   const [endDate, setEndDate] = useState(endDateDefault);
@@ -104,6 +106,38 @@ export default function AbsensiPage() {
     setLoading(false);
   };
 
+  const handleFetchFromDevice = async () => {
+    setFetching(true);
+    setFetchMessage("");
+    try {
+      const res = await fetch("/mesin/get-attlog", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          trans_id: Date.now().toString(),
+          start_date: startDate || undefined,
+          end_date: endDate || undefined,
+        }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        setFetchMessage("Command dikirim ke mesin. Menunggu data...");
+        setTimeout(async () => {
+          await loadData();
+          setFetchMessage("Data berhasil dimuat dari mesin.");
+          setTimeout(() => setFetchMessage(""), 5000);
+        }, 3000);
+      } else {
+        setFetchMessage(`Gagal mengambil data: ${result.message}`);
+        setTimeout(() => setFetchMessage(""), 5000);
+      }
+    } catch {
+      setFetchMessage("Error: Gagal mengirim command ke mesin.");
+      setTimeout(() => setFetchMessage(""), 5000);
+    }
+    setFetching(false);
+  };
+
   const filteredLogs = logs.filter(
     (l) =>
       l.pin.includes(search) ||
@@ -125,7 +159,7 @@ export default function AbsensiPage() {
         i + 1,
         l.pin,
         l.user_name || "-",
-        new Date(l.scan_time).toLocaleString("id-ID"),
+        formatScanTime(l.scan_time),
         formatVerifyType(vType),
         getStatusLabel(l.status_code),
         l.device_sn || "-",
@@ -160,6 +194,16 @@ export default function AbsensiPage() {
               </div>
             </div>
           </div>
+
+          {fetchMessage && (
+            <div className={`px-4 py-3 rounded-xl text-[14px] font-medium ${
+              fetchMessage.includes("Gagal") || fetchMessage.includes("Error")
+                ? "bg-error/10 text-error"
+                : "bg-green-50 text-green-700"
+            }`}>
+              {fetchMessage}
+            </div>
+          )}
 
           <section className="glass-card p-6 rounded-2xl">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 items-end">
@@ -196,16 +240,16 @@ export default function AbsensiPage() {
               </div>
               <div className="lg:col-span-4 flex gap-4">
                 <button
-                  onClick={loadData}
-                  disabled={loading}
+                  onClick={handleFetchFromDevice}
+                  disabled={fetching || loading}
                   className="flex-1 glass-card bg-transparent hover:bg-surface-variant/30 text-primary font-bold py-2.5 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2 border border-on-surface/[0.08] disabled:opacity-50"
                 >
-                  {loading ? (
+                  {fetching ? (
                     <span className="material-symbols-outlined text-lg animate-spin">progress_activity</span>
                   ) : (
                     <span className="material-symbols-outlined text-lg">download</span>
                   )}
-                  {loading ? "Mengambil..." : "Ambil Data"}
+                  {fetching ? "Mengambil dari Mesin..." : "Ambil Data"}
                 </button>
                 <button
                   onClick={handleExportCSV}
@@ -269,14 +313,7 @@ export default function AbsensiPage() {
                             </div>
                           </td>
                           <td className="py-4 px-6 text-[14px] text-secondary">
-                            {new Date(row.scan_time).toLocaleString("id-ID", {
-                              day: "numeric",
-                              month: "short",
-                              year: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              second: "2-digit",
-                            })}
+                            {formatScanTime(row.scan_time)}
                           </td>
                           <td className="py-4 px-6">
                             <div className="flex items-center gap-2 text-[14px] text-secondary">

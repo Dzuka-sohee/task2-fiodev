@@ -8,6 +8,23 @@ export async function POST(request: NextRequest) {
 
   const supabase = await createClient();
 
+  const { data: pendingRequest, error: reqError } = await supabase
+    .from("api_requests")
+    .insert({
+      command: "set_time",
+      raw_payload: body,
+      status: "pending",
+    })
+    .select()
+    .single();
+
+  if (reqError) {
+    return NextResponse.json(
+      { success: false, message: `Gagal insert request: ${reqError.message}` },
+      { status: 500 }
+    );
+  }
+
   const { data: pendingLog, error: logError } = await supabase
     .from("command_logs")
     .insert({
@@ -38,6 +55,11 @@ export async function POST(request: NextRequest) {
     const finalStatus = result.success ? "success" : "failed";
 
     await supabase
+      .from("api_requests")
+      .update({ status: finalStatus, response: result.data })
+      .eq("id", pendingRequest.id);
+
+    await supabase
       .from("command_logs")
       .update({ status: finalStatus, notes: result.message })
       .eq("id", pendingLog.id);
@@ -47,11 +69,16 @@ export async function POST(request: NextRequest) {
       message: result.success
         ? "Command dikirim. Waktu mesin akan disinkronkan beberapa saat."
         : result.message,
-      requestId: pendingLog.id,
+      requestId: pendingRequest.id,
     });
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
+
+    await supabase
+      .from("api_requests")
+      .update({ status: "failed", response: { error: errorMessage } })
+      .eq("id", pendingRequest.id);
 
     await supabase
       .from("command_logs")

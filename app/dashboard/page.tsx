@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 import Topbar from "../components/Topbar";
+import { formatScanTimeShort } from "@/lib/utils";
 
 interface DashboardData {
   metrics: {
@@ -26,8 +27,11 @@ interface DashboardData {
 }
 
 function formatTime(iso: string) {
-  const d = new Date(iso);
-  return d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+  const match = iso.match(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/)
+  if (!match) return iso
+  const [, year, month, day, hour, min] = match
+  const d = new Date(Number(year), Number(month) - 1, Number(day), Number(hour), Number(min))
+  return d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })
 }
 
 function getInitials(name: string) {
