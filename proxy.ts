@@ -32,6 +32,7 @@ export async function proxy(request: NextRequest) {
     "/webhook",
     "/api-logs",
     "/pengaturan",
+    "/alur-api",
   ];
   const isProtectedPath = protectedPaths.some((path) =>
     request.nextUrl.pathname.startsWith(path)

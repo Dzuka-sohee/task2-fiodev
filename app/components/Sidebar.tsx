@@ -12,6 +12,7 @@ const menuItems = [
   { icon: "pin", label: "Data PIN", href: "/pin" },
   { icon: "terminal", label: "API Logs", href: "/api-logs" },
   { icon: "webhook", label: "Webhooks", href: "/webhook" },
+  { icon: "account_tree", label: "Alur API", href: "/alur-api" },
   { icon: "settings", label: "Pengaturan", href: "/pengaturan" },
 ];
 

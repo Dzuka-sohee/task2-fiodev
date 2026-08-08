@@ -168,6 +168,36 @@ Fingerspot Cloud API → Webhook → Supabase webhook_logs table
 
 ---
 
+## Alur API — Set User Info (Tambah/Edit)
+
+```
+┌──────────┐    POST /mesin/set-userinfo     ┌──────────────┐     callFingerspot()      ┌──────────────────┐
+│ Dashboard│ ──────────────────────────────►  │ Next.js API  │ ──────────────────────►   │ Fingerspot Cloud │
+│ (Browser)│  { pin, name, privilege, ... }   │   Route      │  POST /api/set_userinfo   │       API        │
+└──────────┘                                  └──────┬───────┘                            └────────┬─────────┘
+                                                     │                                           │
+                                              ┌──────▼───────┐                            ┌──────▼─────────┐
+                                              │  Supabase    │                            │ Mesin          │
+                                              │  PostgreSQL  │                            │ Fingerprint    │
+                                              │              │                            │ (perangkat     │
+                                              │ • api_requests│                            │  fisik)        │
+                                              │ • command_logs│                            └────────────────┘
+                                              │ • userinfos  │
+                                              └──────────────┘
+```
+
+**Penjelasan Alur:**
+
+1. **User** mengisi form tambah/edit user di halaman Data User, lalu klik **Simpan**.
+2. **Dashboard** mengirim request `POST` ke `/mesin/set-userinfo` dengan payload: `pin`, `name`, `privilege`, `password`, `rfid`, `template`.
+3. **Route handler** mencatat request ke tabel `api_requests` (status: pending) dan `command_logs`.
+4. **callFingerspot()** mengirim request ke `https://developer.fingerspot.io/api/set_userinfo` dengan header `Authorization: Bearer <API_KEY>` dan body yang sudah ditambah `cloud_id`.
+5. **Fingerspot Cloud** meneruskan command ke mesin fingerprint. Mesin akan menyimpan/update data user.
+6. Jika berhasil, **route handler** mengupdate status ke `success` di `api_requests` dan `command_logs`, lalu **upsert** data user ke tabel `userinfos` di Supabase.
+7. **Dashboard** menampilkan notifikasi sukses atau gagal kepada user.
+
+---
+
 ## Database Tables
 
 | Tabel | Fungsi |
