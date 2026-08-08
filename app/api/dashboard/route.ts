@@ -12,7 +12,7 @@ export async function GET() {
     apiRequestsToday: 0,
     webhookReceived: 0,
   };
-  let attendanceTrend: { date: string; count: number }[] = [];
+  let attendanceTrend: { date: string; hadir: number; tidakHadir: number }[] = [];
   let recentLogs: {
     id: string;
     pin: string;
@@ -68,45 +68,42 @@ export async function GET() {
   try {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const startDate = thirtyDaysAgo.toISOString().split('T')[0];
-    const endDate = new Date().toISOString().split('T')[0];
+    thirtyDaysAgo.setHours(0, 0, 0, 0);
+    const startDateISO = thirtyDaysAgo.toISOString();
 
-    const funcRes = await supabase.rpc('attendance_daily_count', {
-      start_date: startDate,
-      end_date: endDate,
+    const { count: totalUsers } = await supabase
+      .from('userinfos')
+      .select('*', { count: 'exact', head: true });
+
+    const { data: attData } = await supabase
+      .from('attlogs')
+      .select('scan_time')
+      .gte('scan_time', startDateISO);
+
+    const hadirMap: Record<string, number> = {};
+    (attData ?? []).forEach((row: { scan_time: string }) => {
+      const d = new Date(row.scan_time);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      hadirMap[key] = (hadirMap[key] || 0) + 1;
     });
 
-    if (funcRes.error) throw funcRes.error;
-
-    attendanceTrend = (funcRes.data ?? []).map(
-      (row: { date: string; count: number }) => ({
-        date: row.date,
-        count: Number(row.count),
-      }),
-    );
-  } catch {
-    try {
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const startDate = thirtyDaysAgo.toISOString();
-
-      const { data } = await supabase
-        .from('attlogs')
-        .select('scan_time')
-        .gte('scan_time', startDate);
-
-      const grouped: Record<string, number> = {};
-      (data ?? []).forEach((row: { scan_time: string }) => {
-        const day = row.scan_time.split('T')[0];
-        grouped[day] = (grouped[day] || 0) + 1;
+    const allDays: { date: string; hadir: number; tidakHadir: number }[] = [];
+    const cursor = new Date(thirtyDaysAgo);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    while (cursor <= today) {
+      const key = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}-${String(cursor.getDate()).padStart(2, '0')}`;
+      const hadir = hadirMap[key] || 0;
+      allDays.push({
+        date: key,
+        hadir,
+        tidakHadir: Math.max((totalUsers || 0) - hadir, 0),
       });
-
-      attendanceTrend = Object.entries(grouped)
-        .map(([date, count]) => ({ date, count }))
-        .sort((a, b) => a.date.localeCompare(b.date));
-    } catch {
-      attendanceTrend = [];
+      cursor.setDate(cursor.getDate() + 1);
     }
+    attendanceTrend = allDays;
+  } catch {
+    attendanceTrend = [];
   }
 
   // Recent logs

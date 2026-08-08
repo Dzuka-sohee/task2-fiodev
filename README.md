@@ -1,5 +1,14 @@
 # Tops Reg Nif - Fingerprint Attendance System Dashboard
 
+<p align="center">
+  <img src="https://img.shields.io/badge/Next.js-16.2-black?logo=next.js" alt="Next.js" />
+  <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react" alt="React" />
+  <img src="https://img.shields.io/badge/TypeScript-5-blue?logo=typescript" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS-4-38BDF8?logo=tailwindcss" alt="Tailwind" />
+  <img src="https://img.shields.io/badge/Supabase-PostgreSQL-3FCF8E?logo=supabase" alt="Supabase" />
+  <img src="https://img.shields.io/badge/license-MIT-green" alt="License" />
+</p>
+
 Dashboard integrasi sistem absensi fingerprint Fingerspot. Menghubungkan mesin absensi Fingerspot dengan database Supabase melalui Fingerspot Cloud API.
 
 ## Tech Stack

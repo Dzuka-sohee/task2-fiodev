@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 import Topbar from "../components/Topbar";
+import AttendanceChart from "../components/AttendanceChart";
 import { formatScanTimeShort } from "@/lib/utils";
 
 interface DashboardData {
@@ -12,7 +13,7 @@ interface DashboardData {
     apiRequestsToday: number;
     webhookReceived: number;
   };
-  attendanceTrend: { date: string; count: number }[];
+  attendanceTrend: { date: string; hadir: number; tidakHadir: number }[];
   recentLogs: {
     id: string;
     pin: string;
@@ -74,7 +75,7 @@ export default function Dashboard() {
   const weekly = data?.weeklyComparison ?? [];
   const maxWeekly = Math.max(...weekly.map((w) => w.count), 1);
 
-  const maxTrend = Math.max(...trend.map((t) => t.count), 1);
+  const maxTrend = Math.max(...trend.map((t) => t.hadir), 1);
 
   return (
     <div className="min-h-screen">
@@ -100,7 +101,7 @@ export default function Dashboard() {
                   <div
                     key={i}
                     className="flex-1 bg-primary/40 rounded-t-sm transition-all"
-                    style={{ height: `${Math.max((t.count / maxTrend) * 100, 5)}%` }}
+                    style={{ height: `${Math.max((t.hadir / maxTrend) * 100, 5)}%` }}
                   />
                 ))}
               </div>
@@ -141,7 +142,7 @@ export default function Dashboard() {
                   <div
                     key={i}
                     className="flex-1 bg-tertiary-fixed/60 rounded-t-sm transition-all"
-                    style={{ height: `${Math.max((t.count / maxTrend) * 100, 5)}%` }}
+                    style={{ height: `${Math.max((t.hadir / maxTrend) * 100, 5)}%` }}
                   />
                 ))}
               </div>
@@ -177,55 +178,7 @@ export default function Dashboard() {
                 </div>
               </div>
               <div className="h-64 w-full relative">
-                {trend.length > 0 ? (
-                  <svg className="w-full h-full" viewBox={`0 0 ${trend.length * 26} 200`} preserveAspectRatio="none">
-                    <defs>
-                      <linearGradient id="grad1" x1="0%" x2="0%" y1="0%" y2="100%">
-                        <stop offset="0%" stopColor="#1d2b3e" stopOpacity="1" />
-                        <stop offset="100%" stopColor="#1d2b3e" stopOpacity="0" />
-                      </linearGradient>
-                    </defs>
-                    <path
-                      d={`M${trend.map((t, i) => `${i * 26},${200 - (t.count / maxTrend) * 180}`).join(" L")}`}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="stroke-primary fill-none stroke-[3]"
-                    />
-                    <path
-                      d={`M${trend.map((t, i) => `${i * 26},${200 - (t.count / maxTrend) * 180}`).join(" L")} L${(trend.length - 1) * 26},200 L0,200 Z`}
-                      fill="url(#grad1)"
-                      opacity="0.1"
-                    />
-                    {trend.map((t, i) => (
-                      <circle
-                        key={i}
-                        cx={i * 26}
-                        cy={200 - (t.count / maxTrend) * 180}
-                        r="3"
-                        className="fill-primary"
-                      />
-                    ))}
-                  </svg>
-                ) : (
-                  <div className="h-full flex items-center justify-center text-secondary">
-                    {loading ? "Memuat data..." : "Belum ada data absensi"}
-                  </div>
-                )}
-                <div className="absolute bottom-0 left-0 w-full flex justify-between px-4 text-[12px] font-semibold text-secondary/60">
-                  {trend.length > 0 ? (
-                    <>
-                      <span>{new Date(trend[0].date).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}</span>
-                      <span>{new Date(trend[Math.floor(trend.length / 2)].date).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}</span>
-                      <span>{new Date(trend[trend.length - 1].date).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>—</span>
-                      <span>—</span>
-                      <span>—</span>
-                    </>
-                  )}
-                </div>
+                <AttendanceChart data={trend} loading={loading} />
               </div>
             </div>
 
