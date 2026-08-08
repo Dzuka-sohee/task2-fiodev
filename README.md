@@ -137,6 +137,30 @@ Buka http://localhost:3000/login dan login dengan akun default:
 3. Mesin akan melakukan restart secara remote
 4. Perintah akan tercatat di tabel **Command History**
 
+### Langkah 8: Kelola Data User (Tambah / Edit / Verifikasi Biometrik)
+
+**Menambah User Baru:**
+
+1. Buka menu **Data User** di sidebar
+2. Klik tombol **Tambah User**
+3. Isikan data: PIN, Nama, Privilege, Password, RFID (opsional)
+4. Klik **Simpan** — data akan dikirim ke mesin dan tersimpan di database
+
+**Edit User:**
+
+1. Cari user berdasarkan PIN atau nama di kolom pencarian
+2. Klik ikon **titik tiga** (⋮) di samping baris user yang ingin diedit
+3. Pilih **Edit**
+4. Ubah data yang diperlukan, lalu klik **Simpan**
+
+**Menambah Verifikasi Biometrik (Fingerprint / Face / Vein):**
+
+1. Cari user yang ingin ditambahkan verifikasi biometriknya
+2. Klik ikon **titik tiga** (⋮) di samping baris user
+3. Pilih **Tambah Verifikasi**
+4. Pilih jenis verifikasi: **Fingerprint**, **Face**, atau **Vein**
+5. Ikuti instruksi pendaftaran yang muncul di layar
+
 ---
 
 ## Fitur Lainnya
@@ -165,36 +189,6 @@ Browser → Next.js App (proxy.ts middleware)
 
 Fingerspot Cloud API → Webhook → Supabase webhook_logs table
 ```
-
----
-
-## Alur API — Set User Info (Tambah/Edit)
-
-```
-┌──────────┐    POST /mesin/set-userinfo     ┌──────────────┐     callFingerspot()      ┌──────────────────┐
-│ Dashboard│ ──────────────────────────────►  │ Next.js API  │ ──────────────────────►   │ Fingerspot Cloud │
-│ (Browser)│  { pin, name, privilege, ... }   │   Route      │  POST /api/set_userinfo   │       API        │
-└──────────┘                                  └──────┬───────┘                            └────────┬─────────┘
-                                                     │                                           │
-                                              ┌──────▼───────┐                            ┌──────▼─────────┐
-                                              │  Supabase    │                            │ Mesin          │
-                                              │  PostgreSQL  │                            │ Fingerprint    │
-                                              │              │                            │ (perangkat     │
-                                              │ • api_requests│                            │  fisik)        │
-                                              │ • command_logs│                            └────────────────┘
-                                              │ • userinfos  │
-                                              └──────────────┘
-```
-
-**Penjelasan Alur:**
-
-1. **User** mengisi form tambah/edit user di halaman Data User, lalu klik **Simpan**.
-2. **Dashboard** mengirim request `POST` ke `/mesin/set-userinfo` dengan payload: `pin`, `name`, `privilege`, `password`, `rfid`, `template`.
-3. **Route handler** mencatat request ke tabel `api_requests` (status: pending) dan `command_logs`.
-4. **callFingerspot()** mengirim request ke `https://developer.fingerspot.io/api/set_userinfo` dengan header `Authorization: Bearer <API_KEY>` dan body yang sudah ditambah `cloud_id`.
-5. **Fingerspot Cloud** meneruskan command ke mesin fingerprint. Mesin akan menyimpan/update data user.
-6. Jika berhasil, **route handler** mengupdate status ke `success` di `api_requests` dan `command_logs`, lalu **upsert** data user ke tabel `userinfos` di Supabase.
-7. **Dashboard** menampilkan notifikasi sukses atau gagal kepada user.
 
 ---
 
