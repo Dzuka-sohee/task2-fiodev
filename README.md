@@ -68,9 +68,15 @@ npm run dev
 
 Buka http://localhost:3000 di browser.
 
-### 6. Register Akun Pertama
+### 6. Login ke Dashboard
 
-Buka http://localhost:3000/register dan buat akun baru. Akun ini akan digunakan untuk login ke dashboard.
+Buka http://localhost:3000/login dan login dengan akun default:
+
+| Email | Password |
+|---|---|
+| admin@topsregnif.com | admin123 |
+
+> **Catatan:** Jika akun belum ada, buat akun baru melalui http://localhost:3000/register terlebih dahulu.
 
 ---
 
