@@ -10,6 +10,9 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Tops Reg Nif",
   description: "Attendance Integration System Dashboard",
+  icons: {
+    icon: "/topsregnif.png",
+  },
 };
 
 export default function RootLayout({

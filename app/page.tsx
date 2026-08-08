@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 function useScrollAnimation() {
   const ref = useRef<HTMLDivElement>(null);
@@ -171,7 +172,7 @@ export default function Landing() {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-3">
-              <span className="material-symbols-outlined text-primary text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>fingerprint</span>
+              <Image src="/topsregnif.png" alt="Tops Reg Nif" width={40} height={40} className="rounded-lg" />
               <div className="flex flex-col">
                 <span className="text-[20px] leading-[28px] font-bold text-primary">Tops Reg Nif</span>
                 <span className="text-[10px] uppercase tracking-widest text-secondary font-bold">Attendance System</span>
@@ -511,7 +512,7 @@ export default function Landing() {
             {/* Brand Column */}
             <div className="lg:col-span-1">
               <div className="flex items-center gap-3 mb-4">
-                <span className="material-symbols-outlined text-primary text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>fingerprint</span>
+                <Image src="/topsregnif.png" alt="Tops Reg Nif" width={32} height={32} className="rounded-lg" />
                 <div className="flex flex-col">
                   <span className="text-lg font-bold text-primary">Tops Reg Nif</span>
                   <span className="text-[10px] uppercase tracking-widest text-secondary font-bold">Attendance System</span>
@@ -561,7 +562,7 @@ export default function Landing() {
               <ul className="space-y-3">
                 <li className="flex items-start gap-2">
                   <span className="material-symbols-outlined text-secondary text-lg mt-0.5">location_on</span>
-                  <span className="text-sm text-secondary">Jl. Teknologi No. 123, Jakarta Selatan, Indonesia</span>
+                  <span className="text-sm text-secondary">Prapatan Mekkah</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-secondary text-lg">mail</span>
@@ -569,7 +570,7 @@ export default function Landing() {
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-secondary text-lg">call</span>
-                  <span className="text-sm text-secondary">+62 21 1234 5678</span>
+                  <span className="text-sm text-secondary">+62 12 3456 6789</span>
                 </li>
               </ul>
             </div>

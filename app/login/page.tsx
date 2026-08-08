@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
@@ -49,7 +50,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md relative z-10">
         {/* Logo */}
         <Link href="/" className="flex items-center justify-center gap-3 mb-10">
-          <span className="material-symbols-outlined text-primary text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>fingerprint</span>
+          <Image src="/topsregnif.png" alt="Tops Reg Nif" width={48} height={48} className="rounded-xl" />
           <div className="flex flex-col">
             <span className="text-[24px] leading-[32px] font-bold text-primary">Tops Reg Nif</span>
             <span className="text-[10px] uppercase tracking-widest text-secondary font-bold">Attendance System</span>

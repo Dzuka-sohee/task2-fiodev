@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 
 const menuItems = [
@@ -20,8 +21,8 @@ export default function Sidebar() {
   return (
     <aside className="fixed left-0 top-0 h-full w-[68px] hover:w-64 transition-all duration-300 z-50 overflow-hidden bg-white/20 backdrop-blur-[24px] border-r border-black/[0.06] shadow-[4px_0_32px_rgba(0,0,0,0.08)] flex flex-col py-6 group">
       <div className="flex items-center px-6 mb-10 overflow-hidden whitespace-nowrap">
-        <span className="material-symbols-outlined text-primary text-3xl mr-4" style={{ fontVariationSettings: "'FILL' 1" }}>fingerprint</span>
-        <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        <Image src="/topsregnif.png" alt="Tops Reg Nif" width={36} height={36} className="rounded-lg shrink-0" />
+        <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity duration-300 ml-4">
           <span className="text-[24px] leading-[32px] font-bold text-primary">Tops Reg Nif</span>
           <span className="text-[10px] uppercase tracking-widest text-secondary font-bold">Attendance System</span>
         </div>
